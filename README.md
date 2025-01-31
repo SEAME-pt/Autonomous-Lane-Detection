@@ -1,20 +1,4 @@
 # ADS Project - Lane Keeping Assist - Level 1 Autonomy ADAS feature  
-## Your lane, your pace!
-</br>
-
-
-- [ADS Project - Lane Keeping Assist - Level 1 Autonomy ADAS feature](#ads-project---lane-keeping-assist---level-1-autonomy-adas-feature)
-  - [Introduction](#introduction)
-  - [Background Information](#background-information)
-  - [Objectives](#objectives)
-  - [Mandatory Part](#mandatory-part)
-  - [Common Instructions](#common-instructions)
-  - [Skills](#skills)
-  - [Evaluation](#evaluation)
-  - [Submission](#submission)
-
-</br>
-
 
 ## Introduction
 
@@ -68,27 +52,6 @@ The dream of self-driving cars has been around for decades, long before they bec
 </br>
 
 
-## Evaluation
-In this project, every team must host ONE final submission demo & presentation (max. 30 mins) in front of all the other teams. Each team must find a way to organize this presentation making sure that all the other teams can be present and participate actively (Please work out what date/time works the best for every team). The date and time of each team's presentation must be communicated to staff well in advance (at least a week in advance). It is presenting team's responsibility to make sure that all the forms are filled in **immediately** after the presentation.
-
-This project has two evaluation forms:
-1. For evaluators (the audience) - Fill in [this form](https://docs.google.com/forms/d/e/1FAIpQLSe7AKrza228fzdDNgevTw4Gsz-ARlWcbtQmXn8JAEYaj24mzw/viewform?usp=sf_link) to evaluate the presenting team's final project submission
-2. For evaluatee (the presentor) - Fill in [this form](https://docs.google.com/forms/d/e/1FAIpQLSfYipLAaXFaAm23ZdW8ruXCfQDOXikLYwhxXwpve9C5kZoZvw/viewform?usp=sf_link) for general feedback on your workings on this project.
-
-</br>
-
-## Submission
-
-1. Code: The source code of the project, including all necessary files and libraries. The code should be well-documented, readable, and organized in a logical manner.
-2. Technical documentation: Detailed technical documentation that provides an overview of the project, including the background information, goals, objectives, technical requirements, software architecture, and design.
-3. Test results: Detailed test results that demonstrate the performance and accuracy of the autonomous lane detection system. This should include test data and results, as well as any graphs or visualizations that help to show the performance of the system.
-4. User manual: A comprehensive user manual that provides instructions on how to use the autonomous vehicle, including how to set up the sensors and other components, how to control the vehicle, and how to monitor its performance.
-5. Presentation: A presentation that summarizes the project and highlights the key results and contributions of the students. This presentation can be in the form of a slide deck, video, or other format as appropriate.
-6. Final report: A final report that summarizes the project and provides a detailed overview of the work that was completed, the results achieved, and the challenges encountered. The report should also include a discussion of future work that could be done to extend or improve the autonomous lane detection system.
-
-</br>
-
-
 # References
 
 Here are some open source references and descriptions that could be used in the Road Surface Segmentation using PiRacer project:
@@ -96,10 +59,3 @@ Here are some open source references and descriptions that could be used in the 
 1. OpenCV: OpenCV is a popular open-source computer vision library that provides a wide range of tools and algorithms for image and video processing. Participants could use OpenCV for pre-processing the video footage, extracting features, and identifying the lane markings.
     Link: [https://opencv.org/](https://opencv.org/)
 
-2. TensorFlow: TensorFlow is an open-source machine learning framework that provides a wide range of tools for training deep neural networks. Participants could use TensorFlow for training a deep neural network for identifying extracted lane markings.
-    Link: https://www.tensorflow.org/
-
-
-
-
-These references are just examples and participants are encouraged to explore other open-source tools and resources that may be more suitable for their specific needs and requirements. Participants should be prepared to research and evaluate different open-source tools and resources, and to make informed decisions about which tools and resources to use for their projects.
