@@ -1,10 +1,9 @@
-# Before Compiling
+# Compiling
 
-Before compilation activate the virtual environment, so you can run the code with all dependencies installed:
+To run this code, you need to install all dependencies such as torch, torchvision and pillow (PIL). We advise you to also create and activate a virtual python environment to install these libraries and to run the code.
+
+To start training the model, run the following inside the pytorch directory:
 
 ```bash
-source venv/bin/activate
 python train.py
 ```
-
-This will start training the model.
