@@ -18,14 +18,13 @@ class LaneDataset(Dataset):
         print(f"Dataset image: {self.image_paths[idx]}")
         print(f"Array image: {np.array(image)}")
         mask = Image.open(self.mask_paths[idx])  #expected output, grayscale
-        mask = np.array(mask) / 4  # Integer division to normalize by 4
-        mask = np.where(mask > 0, 1, 0)
+        mask = np.array(mask) > 0   # Integer division to normalize by 4
         print(f"Array mask: {mask}")
         mask = torch.tensor(mask, dtype=torch.float)
         image = transforms.ToTensor()(image)
         print(f"Image tensor: {image}")
         print(f"Mask tensor: {mask}")
-        return image, mask, self.image_paths[idx], self.mask_paths[idx]
+        return image, mask
 
 mask_dir = os.path.join('.', 'laneseg_label_w16', 'driver_161_90frame')
 image_dir = os.path.join('.', 'driver_161_90frame') 

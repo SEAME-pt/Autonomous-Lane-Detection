@@ -14,9 +14,7 @@ loss_function = nn.BCEWithLogitsLoss() #sigmoid activation and binary cross-entr
 epochs = 10 #One epoch is completed when the model has seen every sample in the dataset once
 for epoch in range(epochs):
     running_loss = 0.0
-    for images, masks, image_paths, mask_paths in train_loader:
-        print(f"Training: {image_paths}")
-        print(f"Training: {mask_paths}")
+    for images, masks in train_loader:
         images, masks = images.to(device), masks.to(device)
         masks = masks.unsqueeze(1)
         print(f"Image shape: {images.shape}, Mask shape: {masks.shape}")
