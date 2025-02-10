@@ -2,7 +2,7 @@
 
 The dataset we are using to train the model is from: https://www.kaggle.com/datasets/manideep1108/culane. From this link we downloaded the following directories, for the images: driver_161_90frame, for the binary masks: laneseg_label_w16, and for testing: driver_182_30_frame.
 
-## Project architecture
+## Project Architecture
 
 For real time testing, we are going to use OpenCV to pre-process our images and then send them to the Pytorch model, so that we can get the best and fastest results.
 

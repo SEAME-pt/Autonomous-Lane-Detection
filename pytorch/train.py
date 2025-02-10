@@ -9,7 +9,7 @@ model = LaneNet().to(device)
 model.train()
 
 optimizer = optim.Adam(model.parameters(), lr=0.001) # all learnable parameters, learning rate
-loss_function = nn.BCEWithLogitsLoss() #sigmoid activation and binary cross-entropy loss, difference between predicted loss_function distribution and true labels
+loss_function = nn.BCELoss() #sigmoid activation and binary cross-entropy loss, difference between predicted loss_function distribution and true labels
 
 epochs = 10 #One epoch is completed when the model has seen every sample in the dataset once
 for epoch in range(epochs):
