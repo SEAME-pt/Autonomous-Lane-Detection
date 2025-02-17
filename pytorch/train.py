@@ -3,20 +3,24 @@ import torch.nn as nn
 import torch.optim as optim
 from model import LaneNet
 from dataset import LaneDataset, train_loader
+import os
 
-device = torch.device("cpu")
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+device = torch.device("cuda")
+torch.cuda.empty_cache()
 model = LaneNet().to(device)
 model.train()
 
 optimizer = optim.Adam(model.parameters(), lr=0.001) # all learnable parameters, learning rate
-loss_function = nn.BCEWithLogitsLoss() #sigmoid activation and binary cross-entropy loss, difference between predicted loss_function distribution and true labels
+loss_function = nn.BCELoss() #binary cross-entropy loss, difference between predicted loss_function distribution and true labels
 
-epochs = 10 #One epoch is completed when the model has seen every sample in the dataset once
+int i = 0
+epochs = 5 #One epoch is completed when the model has seen every sample in the dataset once
 for epoch in range(epochs):
     running_loss = 0.0
     for images, masks, image_paths, mask_paths in train_loader:
-        print(f"Training: {image_paths}")
-        print(f"Training: {mask_paths}")
+        print(f"Epoch: {epoch}")
+        print(f"Iteration: {++i}")
         images, masks = images.to(device), masks.to(device)
         masks = masks.unsqueeze(1)
         print(f"Image shape: {images.shape}, Mask shape: {masks.shape}")
