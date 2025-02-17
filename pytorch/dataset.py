@@ -25,7 +25,7 @@ class LaneDataset(Dataset):
         image = transforms.ToTensor()(image)
         print(f"Image tensor: {image}")
         print(f"Mask tensor: {mask}")
-        return image, mask, self.image_paths[idx], self.mask_paths[idx]
+        return image, mask
 
 mask_dir = os.path.join('.', 'laneseg_label_w16', 'driver_161_90frame')
 image_dir = os.path.join('.', 'driver_161_90frame') 

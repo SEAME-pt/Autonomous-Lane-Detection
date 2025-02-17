@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
-
 #more filters mean the model can detect more patterns in the image
 #binary classification
 class LaneNet(nn.Module): #neural network
@@ -16,7 +15,6 @@ class LaneNet(nn.Module): #neural network
         )
         self.decoder = nn.Sequential( #Reconstructs the output
             nn.Conv2d(128, 64, kernel_size=3, padding=1), #refine details
-            nn.ReLU(),
             nn.Conv2d(64, 1, kernel_size=1), #binary mask
             nn.Sigmoid()
         )
@@ -26,4 +24,5 @@ class LaneNet(nn.Module): #neural network
         x = F.relu(x) # non-linearity so the network can learn complex patterns
         x = F.interpolate(x, scale_factor=2, mode="bilinear", align_corners=False)  #Resizes to a larger size, upsampling
         x = self.decoder(x)
+        x = F.relu(x)
         return x

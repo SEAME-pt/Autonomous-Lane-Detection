@@ -2,15 +2,13 @@
 
 ## Introduction
 
-In this project, you will be exposed to the intersection of virtual simulations and real-world applications. You will delve deep into the mechanisms of the Lane Keeping Assist System (LKA), a pivotal Level 1 autonomous driving feature. Using advanced simulation platforms and actual hardware, you will design, test, and implement an LKAS that can operate both virtually and in the real world. 
+In this project, you will be exposed to the intersection of virtual simulations and real-world applications. You will delve deep into the mechanisms of the Lane Keeping Assist System (LKA), a pivotal Level 1 autonomous driving feature. Using advanced simulation platforms and actual hardware, you will design, test, and implement an LKAS that can operate both virtually and in the real world.
 </br>
-
 
 ## Background Information
 
 The dream of self-driving cars has been around for decades, long before they became a technical reality. From the early radio-controlled cars showcased in the 1930s World's Fair to the futuristic vehicles in science fiction, autonomous driving has always captured human imagination. The Lane Keeping Assist System is one of the first steps in making this dream come true. It's not just a technical marvel; LKAS plays a crucial role in ensuring safer roads by reducing lane departure incidents.  
 </br>
-
 
 ## Objectives
 
@@ -20,7 +18,6 @@ The dream of self-driving cars has been around for decades, long before they bec
 4. Translate the virtual LKAS system to a real-world application using the PiRacer, ensuring it operates effectively with real sensors and environments.
 
 </br>
-
 
 ## Mandatory Part
 
@@ -51,11 +48,9 @@ The dream of self-driving cars has been around for decades, long before they bec
 
 </br>
 
-
 # References
 
 Here are some open source references and descriptions that could be used in the Road Surface Segmentation using PiRacer project:
 
 1. OpenCV: OpenCV is a popular open-source computer vision library that provides a wide range of tools and algorithms for image and video processing. Participants could use OpenCV for pre-processing the video footage, extracting features, and identifying the lane markings.
     Link: [https://opencv.org/](https://opencv.org/)
-

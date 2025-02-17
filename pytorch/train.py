@@ -15,7 +15,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001) # all learnable parameters,
 loss_function = nn.BCELoss() #binary cross-entropy loss, difference between predicted loss_function distribution and true labels
 
 int i = 0
-epochs = 5 #One epoch is completed when the model has seen every sample in the dataset once
+epochs = 10 #One epoch is completed when the model has seen every sample in the dataset once
 for epoch in range(epochs):
     running_loss = 0.0
     for images, masks, image_paths, mask_paths in train_loader:
