@@ -21,7 +21,7 @@ class LaneNet(nn.Module): #neural network
 
     def forward(self, x):
         x = self.encoder(x)
-        x = F.relu(x)
+        x = F.relu(x) # non-linearity so the network can learn complex patterns
         x = F.interpolate(x, scale_factor=2, mode="bilinear", align_corners=False)  #Resizes to a larger size, upsampling
         x = self.decoder(x)
         x = F.relu(x)

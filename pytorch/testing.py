@@ -6,9 +6,9 @@ from torch.utils.data import DataLoader
 from dataset import LaneDataset
 import os
 
-device = torch.device("cpu")
+device = torch.device("cuda")
 model = LaneNet().to(device)
-model.load_state_dict(torch.load('lanenet_model.pth', map_location=device))
+model.load_state_dict(torch.load('lanenet_model.pth', map_location=device), strict=False)
 model.eval()
 
 mask_dir = os.path.join('.', 'laneseg_label_w16', 'driver_182_30frame')
@@ -27,11 +27,8 @@ for root, _, files in os.walk(image_dir):
             mask_paths.append(mask_path)
             image_paths.append(image_path)
 
-# Print a few examples to verify
-for img, mask in zip(image_paths[:5], mask_paths[:5]):
-    print(f"Image: {img}\nMask: {mask}\n")
 
-test_dataset = LaneDataset(image_paths, mask_paths, transform=None)
+test_dataset = LaneDataset(image_paths, mask_paths)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
 # overlapping area between the predicted lane and the actual lane is crucial because it measures how well the model is identifying the correct regions
@@ -45,11 +42,11 @@ total_iou = 0
 num_images = 0
 
 with torch.no_grad():  # No gradients are calculated during testing
-    for images, masks, paths in test_loader:
+    for images, masks in test_loader:
         images, masks = images.to(device), masks.to(device)
         outputs = model(images) # Forward pass
-        predictions = torch.sigmoid(outputs) # Apply sigmoid to outputs to get probabilities
-        predicted_mask = (predictions > 0.5).float()  # Convert probabilities to binary predictions
+        # predictions = torch.sigmoid(outputs) # Apply sigmoid to outputs to get probabilities
+        predicted_mask = (outputs > 0.5).float()  # Convert probabilities to binary predictions
         accuracy = (predicted_mask == masks).float().mean() #Compare predictions with ground truth masks and calculate tensor metrics
         iou = compute_iou(predicted_mask, masks)
         total_iou += iou.item()

@@ -18,7 +18,7 @@ class LaneDataset(Dataset):
         print(f"Dataset image: {self.image_paths[idx]}")
         print(f"Array image: {np.array(image)}")
         mask = Image.open(self.mask_paths[idx])  #expected output, grayscale
-        mask = np.array(mask) > 0  
+        mask = np.array(mask) > 0
         mask = mask.astype(np.float32)
         print(f"Array mask: {mask}")
         mask = torch.tensor(mask, dtype=torch.float)
