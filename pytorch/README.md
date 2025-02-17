@@ -38,7 +38,7 @@ python test.py
 
 ## Converting
 
-To convert the pytorch model to TensorRt, you need to send to the Jetson Nano the model (.pth), and the convert.py script, you can do this my running:
+To convert the pytorch model to TensorRt, you need to send to the Jetson Nano the model (.pth), and the convert.py script, you can do this by running:
 
 ```bash
 chmod +x send_data.sh

@@ -47,11 +47,10 @@ with torch.no_grad():  # No gradients are calculated during testing
         outputs = model(images) # Forward pass
         # predictions = torch.sigmoid(outputs) # Apply sigmoid to outputs to get probabilities
         predicted_mask = (outputs > 0.5).float()  # Convert probabilities to binary predictions
-        accuracy = (predicted_mask == masks).float().mean() #Compare predictions with ground truth masks and calculate tensor metrics
         iou = compute_iou(predicted_mask, masks)
         total_iou += iou.item()
         num_images += 1
-        print(f"Accuracy: {accuracy.item() * 100:.2f}%, IoU: {iou.item():.4f}")
+        print(f"IoU: {iou.item():.4f}")
         total_iou += iou.item()
         num_images += 1
 
