@@ -7,6 +7,8 @@ from dataset import LaneDataset, train_loader
 from torchmetrics import JaccardIndex
 import matplotlib.pyplot as plt
 import numpy as np
+import torch.backends.cudnn as cudnn
+cudnn.benchmark = True
 
 device = torch.device("cuda")
 torch.cuda.empty_cache()
@@ -15,7 +17,7 @@ model.train()
 
 optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4) #adam optimizer for image segmentation  all learnable parameters, learning rate
 loss_function = CombinedLoss()
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
 iou_metric = JaccardIndex(task="binary", num_classes=1).to(device)
 
 def matplot_masks(images, masks, predicted_mask, path):
@@ -40,7 +42,7 @@ def matplot_masks(images, masks, predicted_mask, path):
     print(f"Iou: {iou.item():.4f}, Loss: {loss.item():.4f}, Iter: {i}, path: {path}")
 
 i = 0
-epochs = 5 #One epoch is completed when the model has seen every sample in the dataset once
+epochs = 15 #One epoch is completed when the model has seen every sample in the dataset once
 for epoch in range(epochs):
     running_loss = 0.0
     running_iou = 0.0
@@ -65,4 +67,4 @@ for epoch in range(epochs):
 
 print(model)
 
-torch.save(model.state_dict(), 'lanenet_model1.pth')
+torch.save(model.state_dict(), 'lanenet_model2.pth')

@@ -51,8 +51,7 @@ class LaneNet(nn.Module): #neural network
         e3 = self.encoder3(e2)
         e4 = self.encoder4(e3)
         
-        # Decoder with skip connections
-        d4 = self.decoder4(e4)
+        d4 = self.decoder4(e4) # Decoder with skip connections
         d3 = self.decoder3(torch.cat([d4, F.interpolate(e3, size=d4.shape[2:])], dim=1))  #combine high-level features  with low-level features 
         d2 = self.decoder2(torch.cat([d3, F.interpolate(e2, size=d3.shape[2:])], dim=1))  #Preserve info from earlier layers
         d1 = self.decoder1(torch.cat([d2, F.interpolate(e1, size=d2.shape[2:])], dim=1))

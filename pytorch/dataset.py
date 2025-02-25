@@ -43,11 +43,7 @@ for root, dirs, files in os.walk(image_dir):
 
 def get_transforms():
     return transforms.Compose([
-        # transforms.RandomHorizontalFlip(),  # Random horizontal flip
-        # transforms.RandomRotation(15),      # Random rotation
-        transforms.RandomResizedCrop(1640, scale=(0.8, 1.0)),  # Random resizing
         transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),  # Random color jitter
-        # transforms.ToTensor(),  # Convert to tensor
         # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize for RGB images
     ])
 
