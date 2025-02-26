@@ -7,8 +7,6 @@ from dataset import LaneDataset, train_loader
 from torchmetrics import JaccardIndex
 import matplotlib.pyplot as plt
 import numpy as np
-import torch.backends.cudnn as cudnn
-cudnn.benchmark = True
 
 device = torch.device("cuda")
 torch.cuda.empty_cache()
@@ -17,7 +15,7 @@ model.train()
 
 optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4) #adam optimizer for image segmentation  all learnable parameters, learning rate
 loss_function = CombinedLoss()
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
 iou_metric = JaccardIndex(task="binary", num_classes=1).to(device)
 
 def matplot_masks(images, masks, predicted_mask, path):
@@ -25,8 +23,8 @@ def matplot_masks(images, masks, predicted_mask, path):
     img = np.transpose(img, (1, 2, 0)) 
     true_mask = masks.squeeze().cpu().numpy()
     pred_mask = predicted_mask.squeeze().cpu().numpy()
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
     plt.style.use('dark_background')
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 5))
     ax1.imshow(img)
     ax1.set_title('Image')
     ax1.axis('off')
@@ -37,12 +35,12 @@ def matplot_masks(images, masks, predicted_mask, path):
     ax3.set_title('Predicted Mask')
     ax3.axis('off')
     plt.tight_layout()
-    plt.savefig(f'./debug_img/epoch_{epoch}_iter_{i}.png')
+    plt.savefig(f'./debug_img/{epoch}_{i}.png')
     plt.close()
     print(f"Iou: {iou.item():.4f}, Loss: {loss.item():.4f}, Iter: {i}, path: {path}")
 
 i = 0
-epochs = 15 #One epoch is completed when the model has seen every sample in the dataset once
+epochs = 20 #One epoch is completed when the model has seen every sample in the dataset once
 for epoch in range(epochs):
     running_loss = 0.0
     running_iou = 0.0
@@ -63,8 +61,6 @@ for epoch in range(epochs):
             matplot_masks(images, masks, predicted_mask, path)
         optimizer.step()
     print(f"\n Epoch {epoch + 1}, Loss: {running_loss / len(train_loader)}, IOU: {running_iou / len(train_loader)}") # Print the average loss and iou for this epoch
-    scheduler.step(running_loss)
+    scheduler.step()
 
-print(model)
-
-torch.save(model.state_dict(), 'lanenet_model2.pth')
+torch.save(model.cpu().state_dict(), "lanenet_model5.pth")

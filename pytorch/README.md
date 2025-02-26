@@ -18,7 +18,7 @@ Random Forest might perform well on clean, structured roads but fail on foggy or
 
 ## Hyperparameters
 
-We are using the Adam optimizer for training, as it is well-suited for segmentation tasks due to its adaptive learning rate mechanism. The optimizer is initialized with a standard learning rate of 0.001. However, we are also using a learning rate scheduler (ReduceLROnPlateau) to dynamically adjust the learning rate if the loss function shows no improvement over a certain number of epochs. We also use a weight decay of 1e-4, this helps preventing overfit.
+We are using the Adam optimizer for training, as it is well-suited for segmentation tasks due to its adaptive learning rate mechanism. The optimizer is initialized with a standard learning rate of 0.001. However, we are also using a learning rate scheduler to dynamically adjust the learning rate if the loss function shows no improvement over a certain number of epochs. We also use a weight decay of 1e-4, this helps preventing overfit.
 
 For the loss function, we combine Focal and Dice Loss. Focal Loss is effective in handling class imbalance by giving more weight to hard-to-classify examples (the incorrect predictions), which is common in segmentation tasks. On the other hand, Dice Loss is great for segmentation because it focuses on the intersection of predicted and ground truth values, rather than the union, making it more sensitive to smaller, harder-to-detect regions.
 
@@ -30,13 +30,9 @@ nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1):
 
     This is a 2D convolutional layer that applies a kernel/filter of size 3x3 across the input image. Padding ensures the output has the same spatial dimensions as the input, keeping the feature map size the same after convolution.
 
-nn.BatchNorm2d(out_channels):
-
-    Batch Normalization normalizes the output of the previous layer (after the convolution) by adjusting and scaling it. It helps with training speed and stability. It also helps reduce overfitting by adding some regularization effect.
-
 nn.ReLU(inplace=True):
 
-    ReLU (Rectified Linear Unit) is a non-linear activation function that helps the model learn complex patterns. It outputs the input if it’s positive, or zero if it’s negative. inplace=True means it modifies the input tensor directly, which helps save memory during training.
+    Rectified Linear Unit is a non-linear activation function that helps the model learn complex patterns. It outputs the input if it’s positive, or zero if it’s negative. inplace=True means it modifies the input tensor directly, which helps save memory during training.
 
 nn.MaxPool2d(2):
 
@@ -44,7 +40,7 @@ nn.MaxPool2d(2):
 
 Decoder (ConvTranspose2d):
 
-    The ConvTranspose2d layer is essentially the opposite of a convolution, performing upsampling. This helps increase the spatial dimensions of the feature maps and is used in the decoder part of the network to recreate the original image size (or close to it).
+    This layer is the opposite of a convolution, performing upsampling. This helps increase the spatial dimensions of the feature maps and is used in the decoder part of the network to recreate the original image size.
 
 ## Running
 
@@ -63,7 +59,7 @@ python train.py
 To test the model, run the following, inside the pytorch directory:
 
 ```bash
-python test.py
+python testing.py
 ```
 
 ## Converting

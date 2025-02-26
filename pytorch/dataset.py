@@ -1,10 +1,11 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
 from PIL import Image
 import numpy as np
+import torch.nn.functional as F
+import torchvision.transforms as transforms
 import os
-
+from transformations import get_transforms
 
 class LaneDataset(Dataset):
     def __init__(self, image_paths, mask_paths, transforms=False):
@@ -17,22 +18,31 @@ class LaneDataset(Dataset):
     def __getitem__(self, idx):
         image = Image.open(self.image_paths[idx]) #rgb
         mask = Image.open(self.mask_paths[idx])  #expected output, grayscale
-        mask = np.array(mask) > 0
-        mask = mask.astype(np.float32)
         if self.transforms:
-            image = self.transforms(image)
+            image, mask = self.transforms(image, mask)
+        mask = np.array(mask) > 0
+        print(mask.unique())
+        mask = mask.astype(np.float32)
         mask = torch.tensor(mask, dtype=torch.float)
         image = transforms.ToTensor()(image)
+
+        mask = mask.unsqueeze(0).unsqueeze(0)  
+        mask = F.interpolate(mask, size=(590, 590), mode='nearest')
+        mask = mask.squeeze(0).squeeze(0)  # Remove batch dimension -> (C, H, W)
+
+        image = image.unsqueeze(0)
+        image = F.interpolate(image, size=(590, 590), mode='nearest')
+        image = image.squeeze(0)
         return image, mask, self.mask_paths[idx], self.image_paths[idx]
 
-mask_dir = os.path.join('.', 'laneseg_label_w16', 'driver_161_90frame')
-image_dir = os.path.join('.', 'driver_161_90frame') 
+mask_dir = os.path.join('.', 'TUSimple', 'train_set', 'seg_label')
+image_dir = os.path.join('.', 'TUSimple', 'train_set', 'clips') 
 image_paths = []
 mask_paths = []
 
 for root, dirs, files in os.walk(image_dir):
     for file in files:
-        if file.endswith('.jpg'):
+        if file == '20.jpg':
             image_path = os.path.join(root, file)
             mask_path = os.path.join(mask_dir, os.path.relpath(image_path, image_dir)).replace('.jpg', '.png')
             if not os.path.exists(mask_path):  
@@ -40,14 +50,6 @@ for root, dirs, files in os.walk(image_dir):
             mask_paths.append(mask_path)
             image_paths.append(image_path)
 
-
-def get_transforms():
-    return transforms.Compose([
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),  # Random color jitter
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize for RGB images
-    ])
-
-# Pass the transforms to your dataset
 transform = get_transforms()
 
 dataset = LaneDataset(image_paths, mask_paths, transform)

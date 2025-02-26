@@ -2,3 +2,5 @@ pytorch/driver_161_90frame/
 pytorch/driver_182_30frame/
 pytorch/laneseg_label_w16/
 pytorch/debug_img/
+pytorch/test_img/
+pytorch/TUSimple/

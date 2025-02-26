@@ -7,10 +7,11 @@ from dataset import LaneDataset
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from torchmetrics import JaccardIndex
 
 device = torch.device("cuda")
 model = LaneNet().to(device)
-model.load_state_dict(torch.load('lanenet_model.pth', map_location=device))
+model.load_state_dict(torch.load('lanenet_model4.pth', map_location=device))
 model.eval()
 
 mask_dir = os.path.join('.', 'laneseg_label_w16', 'driver_182_30frame')
@@ -30,21 +31,17 @@ for root, _, files in os.walk(image_dir):
 
 test_dataset = LaneDataset(image_paths, mask_paths)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
-
 # overlapping area between the predicted lane and the actual lane is crucial because it measures how well the model is identifying the correct regions
-def compute_iou(pred_mask, true_mask, epsilon=1e-6):
-    intersection = torch.sum(pred_mask * true_mask)
-    union = torch.sum(pred_mask) + torch.sum(true_mask) - intersection
-    iou = intersection / (union + epsilon)
-    return iou
+iou_metric = JaccardIndex(task="binary", num_classes=1).to(device)
+
 
 def matplot_masks(images, masks, predicted_mask, iter):
     img = images.squeeze().cpu().numpy()
     img = np.transpose(img, (1, 2, 0)) 
     true_mask = masks.squeeze().cpu().numpy()
     pred_mask = predicted_mask.squeeze().cpu().numpy()
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
     plt.style.use('dark_background')
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
     ax1.imshow(img)
     ax1.set_title('Image')
     ax1.axis('off')
@@ -68,7 +65,7 @@ with torch.no_grad():  # No gradients are calculated during testing
         outputs = model(images) # Forward pass
         predictions = torch.sigmoid(outputs)
         predicted_mask = (predictions > 0.5).float()  # Convert probabilities to binary predictions
-        iou = compute_iou(predicted_mask, masks)
+        iou = iou_metric(predicted_mask, masks)
         total_iou += iou.item()
         num_images += 1
         iter += 1
