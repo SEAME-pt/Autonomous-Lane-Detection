@@ -15,7 +15,7 @@ model.train()
 
 optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4) #adam optimizer for image segmentation  all learnable parameters, learning rate
 loss_function = CombinedLoss()
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=5)
 iou_metric = JaccardIndex(task="binary", num_classes=1).to(device)
 
 def matplot_masks(images, masks, predicted_mask, path):
@@ -37,10 +37,10 @@ def matplot_masks(images, masks, predicted_mask, path):
     plt.tight_layout()
     plt.savefig(f'./debug_img/{epoch}_{i}.png')
     plt.close()
-    print(f"Iou: {iou.item():.4f}, Loss: {loss.item():.4f}, Iter: {i}, path: {path}")
+    # print(f"Iou: {iou.item():.4f}, Loss: {loss.item():.4f}, Iter: {i}, path: {path}")
 
 i = 0
-epochs = 20 #One epoch is completed when the model has seen every sample in the dataset once
+epochs = 3 #One epoch is completed when the model has seen every sample in the dataset once
 for epoch in range(epochs):
     running_loss = 0.0
     running_iou = 0.0
@@ -57,6 +57,8 @@ for epoch in range(epochs):
         loss.backward() #gradients indicate how much each parameter should be adjusted to minimize the loss
         running_loss += loss.item() 
         running_iou += iou.item()
+        if i % 60:
+            print(path)
         if i % 200 == 0:
             matplot_masks(images, masks, predicted_mask, path)
         optimizer.step()

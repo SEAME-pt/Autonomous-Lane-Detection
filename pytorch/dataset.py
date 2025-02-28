@@ -5,7 +5,6 @@ import numpy as np
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 import os
-from transformations import get_transforms
 
 class LaneDataset(Dataset):
     def __init__(self, image_paths, mask_paths, transforms=False):
@@ -17,19 +16,17 @@ class LaneDataset(Dataset):
     
     def __getitem__(self, idx):
         image = Image.open(self.image_paths[idx]) #rgb
-        mask = Image.open(self.mask_paths[idx])  #expected output, grayscale
+        mask = Image.open(self.mask_paths[idx]).convert("L")  #expected output, grayscale
         if self.transforms:
             image, mask = self.transforms(image, mask)
         mask = np.array(mask) > 0
-        print(mask.unique())
         mask = mask.astype(np.float32)
         mask = torch.tensor(mask, dtype=torch.float)
+        # print(mask.unique())
         image = transforms.ToTensor()(image)
-
         mask = mask.unsqueeze(0).unsqueeze(0)  
         mask = F.interpolate(mask, size=(590, 590), mode='nearest')
         mask = mask.squeeze(0).squeeze(0)  # Remove batch dimension -> (C, H, W)
-
         image = image.unsqueeze(0)
         image = F.interpolate(image, size=(590, 590), mode='nearest')
         image = image.squeeze(0)
@@ -50,7 +47,19 @@ for root, dirs, files in os.walk(image_dir):
             mask_paths.append(mask_path)
             image_paths.append(image_path)
 
-transform = get_transforms()
 
-dataset = LaneDataset(image_paths, mask_paths, transform)
-train_loader = DataLoader(dataset, batch_size=1, shuffle=True)
+mask_dir = os.path.join('.', 'TUSimple', 'train_set', 'seg_label', '06040311_1063.MP4')
+image_dir = os.path.join('.', 'TUSimple', 'train_set', 'clips', '06040311_1063.MP4') 
+for root, dirs, files in os.walk(image_dir):
+    for file in files:
+        if file.endswith('.jpg'):
+            image_path = os.path.join(root, file)
+            print(f'adding: {image_path}')
+            mask_path = os.path.join(mask_dir, os.path.relpath(image_path, image_dir)).replace('.jpg', '.png')
+            mask_paths.append(mask_path)
+            image_paths.append(image_path)
+
+
+
+dataset = LaneDataset(image_paths, mask_paths)
+train_loader = DataLoader(dataset, batch_size=1, shuffle=False)
