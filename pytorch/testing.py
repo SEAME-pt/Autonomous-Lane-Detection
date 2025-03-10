@@ -14,10 +14,22 @@ model = LaneNet().to(device)
 model.load_state_dict(torch.load('lanenet_model5.pth', map_location=device))
 model.eval()
 
-mask_dir = os.path.join('.', 'TUSimple', 'train_set', 'seg_label')
-image_dir = os.path.join('.', 'TUSimple', 'test_set', 'clips') 
+mask_dir = os.path.join('.', 'TUSimple', 'train_set', 'seg_label', '06040311_1063.MP4')
+image_dir = os.path.join('.', 'TUSimple', 'test_set', 'clips', '06040308_1062.MP4') 
 image_paths = []
 mask_paths = []
+
+for root, dirs, files in os.walk(image_dir):
+    for file in files:
+        if file.endswith('.jpg'):
+            image_path = os.path.join(root, file)
+            frame_name = os.path.basename(file).replace('.jpg', '.png')
+            mask_path = os.path.join(mask_dir, frame_name)
+            mask_paths.append(mask_path)
+            image_paths.append(image_path)
+
+mask_dir = os.path.join('.', 'TUSimple', 'train_set', 'seg_label')
+image_dir = os.path.join('.', 'TUSimple', 'test_set', 'clips') 
 
 for root, dirs, files in os.walk(image_dir):
     for file in files:
@@ -27,20 +39,10 @@ for root, dirs, files in os.walk(image_dir):
             mask_paths.append(mask_path)
             image_paths.append(image_path)
 
-mask_dir = os.path.join('.', 'TUSimple', 'train_set', 'seg_label', '06040308_1062.MP4')
-image_dir = os.path.join('.', 'TUSimple', 'test_set', 'clips', '06040308_1062.MP4') 
-for root, dirs, files in os.walk(image_dir):
-    for file in files:
-        if file == '.jpg':
-            image_path = os.path.join(root, file)
-            mask_path = os.path.join(mask_dir, os.path.relpath(image_path, image_dir)).replace('.jpg', '.png')
-            mask_paths.append(mask_path)
-            image_paths.append(image_path)
-
 test_dataset = LaneDataset(image_paths, mask_paths)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
-def matplot_masks(images, predicted_mask, iter):
+def matplot_masks(images, predicted_mask, iter, path):
     img = images.squeeze().cpu().numpy()
     img = np.transpose(img, (1, 2, 0)) 
     pred_mask = predicted_mask.squeeze().cpu().numpy()
@@ -53,21 +55,19 @@ def matplot_masks(images, predicted_mask, iter):
     ax3.set_title('Predicted Mask')
     ax3.axis('off')
     plt.tight_layout()
+    print(f'image path: {path}, iter: {iter}')
     plt.savefig(f'./test_img/{iter}.png')
     plt.close()
 
 iter = 0
-total_iou = 0
-num_images = 0
 with torch.no_grad():  # No gradients are calculated during testing
     for images, masks, paths, path in test_loader:
         images, masks = images.to(device), masks.to(device)
         outputs = model(images) # Forward pass
         predictions = torch.sigmoid(outputs)
         predicted_mask = (predictions > 0.5).float()  # Convert probabilities to binary predictions
-        num_images += 1
         iter += 1
-        if iter % 100:
-            matplot_masks(images, predicted_mask, iter)
+        if iter % 10 == 0:
+            matplot_masks(images, predicted_mask, iter, path)
 
 

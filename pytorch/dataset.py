@@ -22,7 +22,6 @@ class LaneDataset(Dataset):
         mask = np.array(mask) > 0
         mask = mask.astype(np.float32)
         mask = torch.tensor(mask, dtype=torch.float)
-        # print(mask.unique())
         image = transforms.ToTensor()(image)
         mask = mask.unsqueeze(0).unsqueeze(0)  
         mask = F.interpolate(mask, size=(590, 590), mode='nearest')
@@ -54,7 +53,16 @@ for root, dirs, files in os.walk(image_dir):
     for file in files:
         if file.endswith('.jpg'):
             image_path = os.path.join(root, file)
-            print(f'adding: {image_path}')
+            mask_path = os.path.join(mask_dir, os.path.relpath(image_path, image_dir)).replace('.jpg', '.png')
+            mask_paths.append(mask_path)
+            image_paths.append(image_path)
+
+mask_dir = os.path.join('.', 'TUSimple', 'train_set', 'seg_label', '06040302_1060.MP4')
+image_dir = os.path.join('.', 'TUSimple', 'train_set', 'clips', '06040302_1060.MP4') 
+for root, dirs, files in os.walk(image_dir):
+    for file in files:
+        if file.endswith('.jpg'):
+            image_path = os.path.join(root, file)
             mask_path = os.path.join(mask_dir, os.path.relpath(image_path, image_dir)).replace('.jpg', '.png')
             mask_paths.append(mask_path)
             image_paths.append(image_path)
@@ -62,4 +70,4 @@ for root, dirs, files in os.walk(image_dir):
 
 
 dataset = LaneDataset(image_paths, mask_paths)
-train_loader = DataLoader(dataset, batch_size=1, shuffle=False)
+train_loader = DataLoader(dataset, batch_size=1, shuffle=True)

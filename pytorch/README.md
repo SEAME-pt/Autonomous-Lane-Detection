@@ -22,7 +22,7 @@ We are using the Adam optimizer for training, as it is well-suited for segmentat
 
 For the loss function, we combine Focal and Dice Loss. Focal Loss is effective in handling class imbalance by giving more weight to hard-to-classify examples (the incorrect predictions), which is common in segmentation tasks. On the other hand, Dice Loss is great for segmentation because it focuses on the intersection of predicted and ground truth values, rather than the union, making it more sensitive to smaller, harder-to-detect regions.
 
-We are also applying transformations (data augmentation) to the images, which helps the model adapt and generalize to a wider range of input data. Additionally, to combat overfitting, we apply random dropouts in the model's layers during training, which helps prevent the model from depending too much on certain neurons or features, encouraging it to learn more general patterns.
+Additionally, to combat overfitting, we apply random dropouts in the model's layers during training, which helps prevent the model from depending too much on certain neurons or features, encouraging it to learn more general patterns.
 
 We also use skip connections to ensure our model doesn't lose important information from earlier layers.
 
