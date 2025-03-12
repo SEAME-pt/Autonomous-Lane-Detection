@@ -1,6 +1,6 @@
 # Lane Detection model
 
-The dataset we are using to train the model is from: <https://www.kaggle.com/datasets/manideep1108/culane>. From this link we downloaded the following directories, for the images: driver_161_90frame, for the binary masks: laneseg_label_w16, and for testing: driver_182_30_frame.
+The datasets we are using to train the model are from: <https://www.kaggle.com/datasets/manideep1108/culane> and <https://www.kaggle.com/datasets/manideep1108/tusimple>. We used a few directories with nightime images from driver_161_90frame folder of CULane, and their corresponding binary masks: laneseg_label_w16. The rest of the training images are from TUSimple. For testing, we used a couple other selected directories from the same datasets.
 
 ## Project Architecture
 
@@ -33,6 +33,10 @@ nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1):
 nn.ReLU(inplace=True):
 
     Rectified Linear Unit is a non-linear activation function that helps the model learn complex patterns. It outputs the input if it’s positive, or zero if it’s negative. inplace=True means it modifies the input tensor directly, which helps save memory during training.
+
+nn.GroupNorm(num_groups=32, num_channels=out_channels):
+
+    Normalization is the process of scaling and shifting input data or activations so that they have a more stable distribution, usually with zero mean and unit variance. This helps neural networks learn faster and generalize better.
 
 nn.MaxPool2d(2):
 

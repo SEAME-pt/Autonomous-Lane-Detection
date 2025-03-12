@@ -24,7 +24,7 @@ class LaneNet(nn.Module): #neural network
     def encoder_layer(self, in_channels, out_channels):
         return nn.Sequential(   # pass the input through all layers in order and return the final output
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1), #2d images
-            nn.GroupNorm(num_groups=32, num_channels=out_channels), #increase speed, helps with overfitting
+            nn.GroupNorm(num_groups=32, num_channels=out_channels), #increase speed, helps with overfitting, doesn't depend on batch size, useful for small batch sizes
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.GroupNorm(num_groups=32, num_channels=out_channels),
@@ -54,7 +54,7 @@ class LaneNet(nn.Module): #neural network
         d4 = self.decoder4(e4) # Decoder with skip connections
         d3 = self.decoder3(torch.cat([d4, F.interpolate(e3, size=d4.shape[2:])], dim=1))  #combine high-level features  with low-level features 
         d2 = self.decoder2(torch.cat([d3, F.interpolate(e2, size=d3.shape[2:])], dim=1))  #Preserve info from earlier layers
-        d1 = self.decoder1(torch.cat([d2, F.interpolate(e1, size=d2.shape[2:])], dim=1))
+        d1 = self.decoder1(torch.cat([d2, F.interpolate(e1, size=d2.shape[2:])], dim=1)) #match the sizes before concat, encoder reduces size
         
         d1 = F.interpolate(d1, size=(590, 590), mode='bilinear', align_corners=False)
         return self.final(d1)

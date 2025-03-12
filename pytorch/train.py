@@ -7,9 +7,10 @@ from dataset import LaneDataset, train_loader
 from torchmetrics import JaccardIndex
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import psutil
 
 device = torch.device("cuda")
-torch.cuda.empty_cache()
 model = LaneNet().to(device)
 model.train()
 
@@ -40,8 +41,10 @@ def matplot_masks(images, masks, predicted_mask, path):
     print(f"Iou: {iou.item():.4f}, Loss: {loss.item():.4f}, Iter: {i}, path: {path}")
 
 i = 0
-epochs = 90 #One epoch is completed when the model has seen every sample in the dataset once
+epochs = 35 #One epoch is completed when the model has seen every sample in the dataset once
+scaler = torch.amp.GradScaler()
 for epoch in range(epochs):
+    torch.cuda.empty_cache()
     running_loss = 0.0
     running_iou = 0.0
     for images, masks, path, paths in train_loader:
@@ -49,18 +52,24 @@ for epoch in range(epochs):
         images, masks = images.to(device), masks.to(device)
         masks = masks.unsqueeze(1)
         optimizer.zero_grad() # Zero the gradients
-        outputs = model(images) #calls forward()
-        loss = loss_function(outputs, masks) #loss is a tensor
-        predicted_probs = torch.sigmoid(outputs) # convert to 0 - 1, activation function, decides whats important, probability
+        with torch.amp.autocast(device_type='cuda'):
+            outputs = model(images) #calls forward()
+            loss = loss_function(outputs, masks) #loss is a tensor
+            predicted_probs = torch.sigmoid(outputs) # convert to 0 - 1, activation function, decides whats important, probability
         predicted_mask = (predicted_probs > 0.5).float() 
         iou = iou_metric(predicted_mask, masks)
-        loss.backward() #gradients indicate how much each parameter should be adjusted to minimize the loss
+        # loss.backward() #gradients indicate how much each parameter should be adjusted to minimize the loss
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
         running_loss += loss.item() 
         running_iou += iou.item()
         if i % 60 == 0:
             matplot_masks(images, masks, predicted_mask, path)
-        optimizer.step()
+        # optimizer.step()
     print(f"\n Epoch {epoch + 1}, Loss: {running_loss / len(train_loader)}, IOU: {running_iou / len(train_loader)}") # Print the average loss and iou for this epoch
+    print(torch.cuda.memory_summary(abbreviated=False))
+    print(f"Current RAM: {psutil.Process().memory_info().rss/1e9:.2f} GB")
     scheduler.step()
 
 torch.save(model.cpu().state_dict(), "lanenet_model6.pth")
