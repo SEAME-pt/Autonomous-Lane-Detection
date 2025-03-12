@@ -70,4 +70,4 @@ for root, dirs, files in os.walk(image_dir):
 
 
 dataset = LaneDataset(image_paths, mask_paths)
-train_loader = DataLoader(dataset, batch_size=1, shuffle=True)
+train_loader = DataLoader(dataset, batch_size=1, shuffle=True,  num_workers=0, pin_memory=False)
