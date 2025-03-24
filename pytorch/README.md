@@ -48,7 +48,7 @@ Decoder (ConvTranspose2d):
 
 ## Running
 
-To run this code, you need to install all dependencies such as torch, torchvision and pillow (PIL). I advise you to create and activate a virtual python environment to install these libraries and run the code.
+To run this code, you need to install all dependencies such as torch, torchvision and pillow (PIL)
 
 ## Training
 
@@ -68,15 +68,19 @@ python testing.py
 
 ## Converting
 
-To convert the pytorch model to TensorRt, you need to send to the Jetson Nano the model (.pth), and the convert.py script, you can do this by running:
+To convert the pytorch model to TensorRt, you need to send to the Jetson Nano the model (.pth), you can do this by running:
 
 ```bash
-chmod +x send_data.sh
-send_data.sh
+scp ./pytorch/lanenet_model.pth okdot5@10.21.221.43:/home/jetracer/
 ```
 
-After this, run in jetson the converting script, in a virtual environment, be sure to install tensorrt as well:
+After this, run the converting script, be sure to install ONNX as well:
 
 ```bash
 python convert.py
 ```
+
+Then, you can convert to tensort in jetson.
+
+## Testing in CARLA
+For testing in CARLA, be sure to move carla_setup.py to PythonApi/carla directory in your carla's version folder.

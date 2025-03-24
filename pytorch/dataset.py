@@ -5,9 +5,32 @@ import numpy as np
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 import os
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+
+train_transforms = A.Compose([
+    A.Resize(height=512, width=512),  # Ensure consistent input size
+    A.RandomRotate90(p=0.5),
+    A.Transpose(p=0.5),
+    A.HorizontalFlip(p=0.5),
+    A.RandomBrightnessContrast(p=0.3),
+    A.RandomGamma(p=0.3),
+    A.GaussianBlur(p=0.1),
+    A.MotionBlur(p=0.1),
+    A.HueSaturationValue(p=0.1),  # Added color jitter
+    A.ElasticTransform(p=0.1),  # Added elastic transformation
+    A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ToTensorV2(),
+])
+
+test_transforms = A.Compose([
+    A.Resize(height=512, width=512),
+    A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ToTensorV2(),
+])
 
 class LaneDataset(Dataset):
-    def __init__(self, image_paths, mask_paths, transforms=False):
+    def __init__(self, image_paths, mask_paths=None, transforms=None):
         self.image_paths = image_paths
         self.mask_paths = mask_paths
         self.transforms = transforms
@@ -15,59 +38,35 @@ class LaneDataset(Dataset):
         return len(self.image_paths)
     
     def __getitem__(self, idx):
-        image = Image.open(self.image_paths[idx]) #rgb
-        mask = Image.open(self.mask_paths[idx]).convert("L")  #expected output, grayscale
-        if self.transforms:
-            image, mask = self.transforms(image, mask)
-        mask = np.array(mask) > 0
-        mask = mask.astype(np.float32)
-        mask = torch.tensor(mask, dtype=torch.float)
-        image = transforms.ToTensor()(image)
-        mask = mask.unsqueeze(0).unsqueeze(0)  
-        mask = F.interpolate(mask, size=(590, 590), mode='nearest')
-        mask = mask.squeeze(0).squeeze(0)  # Remove batch dimension -> (C, H, W)
-        image = image.unsqueeze(0)
-        image = F.interpolate(image, size=(590, 590), mode='nearest')
-        image = image.squeeze(0)
-        return image, mask, self.mask_paths[idx], self.image_paths[idx]
+        image = np.array(Image.open(self.image_paths[idx])) #rgb
+        if self.mask_paths:
+            mask = np.array(Image.open(self.mask_paths[idx]).convert("L")) 
+            augmented = self.transforms(image=image, mask=mask)
+            image = augmented["image"].float()
+            mask = augmented["mask"].float()
+            mask = np.array(mask) > 0
+            mask = mask.astype(np.float32)
+            return image, mask, self.image_paths[idx] 
+        else:
+            augmented = self.transforms(image=image)  # Get full augmentation dict
+            image = augmented["image"].float()
+        return image, self.image_paths[idx]
 
-mask_dir = os.path.join('.', 'TUSimple', 'train_set', 'seg_label')
-image_dir = os.path.join('.', 'TUSimple', 'train_set', 'clips') 
+
 image_paths = []
 mask_paths = []
 
+mask_dir = os.path.join('.', 'new_data', 'train_label')
+image_dir = os.path.join('.', 'new_data', 'train') 
 for root, dirs, files in os.walk(image_dir):
     for file in files:
-        if file == '20.jpg':
-            image_path = os.path.join(root, file)
-            mask_path = os.path.join(mask_dir, os.path.relpath(image_path, image_dir)).replace('.jpg', '.png')
-            if not os.path.exists(mask_path):  
-                continue  # Skip unmatched pairs
-            mask_paths.append(mask_path)
-            image_paths.append(image_path)
+        image_path = os.path.join(root, file)
+        file_name, file_ext = os.path.splitext(file)
+        mask_file_name = f"{file_name}_label{file_ext}"
+        mask_path = os.path.join(mask_dir, os.path.relpath(os.path.join(root, mask_file_name), image_dir))
+        mask_paths.append(mask_path)
+        image_paths.append(image_path)
 
 
-mask_dir = os.path.join('.', 'TUSimple', 'train_set', 'seg_label', '06040311_1063.MP4')
-image_dir = os.path.join('.', 'TUSimple', 'train_set', 'clips', '06040311_1063.MP4') 
-for root, dirs, files in os.walk(image_dir):
-    for file in files:
-        if file.endswith('.jpg'):
-            image_path = os.path.join(root, file)
-            mask_path = os.path.join(mask_dir, os.path.relpath(image_path, image_dir)).replace('.jpg', '.png')
-            mask_paths.append(mask_path)
-            image_paths.append(image_path)
-
-mask_dir = os.path.join('.', 'TUSimple', 'train_set', 'seg_label', '06040302_1060.MP4')
-image_dir = os.path.join('.', 'TUSimple', 'train_set', 'clips', '06040302_1060.MP4') 
-for root, dirs, files in os.walk(image_dir):
-    for file in files:
-        if file.endswith('.jpg'):
-            image_path = os.path.join(root, file)
-            mask_path = os.path.join(mask_dir, os.path.relpath(image_path, image_dir)).replace('.jpg', '.png')
-            mask_paths.append(mask_path)
-            image_paths.append(image_path)
-
-
-
-dataset = LaneDataset(image_paths, mask_paths)
-train_loader = DataLoader(dataset, batch_size=1, shuffle=True,  num_workers=0, pin_memory=False)
+dataset = LaneDataset(image_paths, mask_paths, transforms=train_transforms)
+train_loader = DataLoader(dataset, batch_size=4, shuffle=True,  num_workers=0, pin_memory=True)
