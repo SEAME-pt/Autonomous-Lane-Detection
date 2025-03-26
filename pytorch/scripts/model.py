@@ -56,5 +56,5 @@ class LaneNet(nn.Module): #neural network
         d2 = self.decoder2(torch.cat([d3, F.interpolate(e2, size=d3.shape[2:])], dim=1))  #Preserve info from earlier layers
         d1 = self.decoder1(torch.cat([d2, F.interpolate(e1, size=d2.shape[2:])], dim=1)) #match the sizes before concat, encoder reduces size
         
-        # d1 = F.interpolate(d1, size=(512, 512), mode='bilinear', align_corners=False)
+        d1 = F.interpolate(d1, size=(512, 512), mode='bilinear', align_corners=False)
         return self.final(d1)

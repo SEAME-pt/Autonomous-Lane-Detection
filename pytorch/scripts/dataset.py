@@ -51,29 +51,29 @@ class LaneDataset(Dataset):
         return image, self.image_paths[idx]
 
 
-image_paths = []
-mask_paths = []
-# # mask_dir = os.path.join('.', 'training' ,'town4_images', 'train_label')
-# # image_dir = os.path.join('.','training' ,'town4_images', 'train') 
-# # for root, dirs, files in os.walk(image_dir):
-# #     for file in files:
-# #         image_path = os.path.join(root, file)
-# #         file_name, file_ext = os.path.splitext(file)
-# #         mask_file_name = f"{file_name}_label{file_ext}"
-# #         mask_path = os.path.join(mask_dir, os.path.relpath(os.path.join(root, mask_file_name), image_dir))
-# #         mask_paths.append(mask_path)
-# #         image_paths.append(image_path)
+# image_paths = []
+# mask_paths = []
+# # # mask_dir = os.path.join('.', 'training' ,'town4_images', 'train_label')
+# # # image_dir = os.path.join('.','training' ,'town4_images', 'train') 
+# # # for root, dirs, files in os.walk(image_dir):
+# # #     for file in files:
+# # #         image_path = os.path.join(root, file)
+# # #         file_name, file_ext = os.path.splitext(file)
+# # #         mask_file_name = f"{file_name}_label{file_ext}"
+# # #         mask_path = os.path.join(mask_dir, os.path.relpath(os.path.join(root, mask_file_name), image_dir))
+# # #         mask_paths.append(mask_path)
+# # #         image_paths.append(image_path)
 
-image_dir = os.path.join('.','training' ,'german_dataset') 
-for root, dirs, files in os.walk(image_dir):
-    for file in files:
-        if file.endswith('.jpg'):
-            image_path = os.path.join(root, file)
-            mask_path = image_path.replace('.jpg', '.png')
-            if not os.path.exists(mask_path):  
-                continue 
-            mask_paths.append(mask_path)
-            image_paths.append(image_path)
+# image_dir = os.path.join('..', 'training' ,'german_dataset') 
+# for root, dirs, files in os.walk(image_dir):
+#     for file in files:
+#         if file.endswith('.jpg'):
+#             image_path = os.path.join(root, file)
+#             mask_path = image_path.replace('.jpg', '.png')
+#             if not os.path.exists(mask_path):  
+#                 continue 
+#             mask_paths.append(mask_path)
+#             image_paths.append(image_path)
 
-dataset = LaneDataset(image_paths, mask_paths, transforms=train_transforms)
-train_loader = DataLoader(dataset, batch_size=6, shuffle=True,  num_workers=0, pin_memory=True)
+# dataset = LaneDataset(image_paths, mask_paths, transforms=train_transforms)
+# train_loader = DataLoader(dataset, batch_size=6, shuffle=True,  num_workers=0, pin_memory=True)

@@ -25,10 +25,8 @@ def denormalize(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
         denorm_image = image.clone().cpu().numpy()
     else:
         denorm_image = image.copy()
-    
     if denorm_image.shape[0] == 3: # Ensure the image is in (C, H, W) format
         denorm_image = denorm_image.transpose(1, 2, 0)  # Change to (H, W, C)
-    
     denorm_image = denorm_image * np.array(std) + np.array(mean) # Denormalize
     # Clip values to [0, 1] range
     return np.clip(denorm_image, 0, 1)
@@ -51,7 +49,7 @@ def matplot_masks(images, masks, predicted_mask, path):
     ax3.set_title('Predicted Mask')
     ax3.axis('off')
     plt.tight_layout()
-    plt.savefig(f'./debug/training_img/{epoch + 1}_{i}.png')
+    plt.savefig(f'../debug/training_img/{epoch + 1}_{i}.png')
     plt.close()
     gc.collect() 
     print(f"Iou: {iou.item():.4f}, Loss: {loss.item():.4f}, Iter: {i}, path: {path}")
@@ -60,7 +58,7 @@ best_iou = -float('inf')  # Start with a very low IoU
 best_loss = float('inf') 
 
 i = 0
-save_dir = "./models/"
+save_dir = "../models/"
 scaler = torch.amp.GradScaler()
 for epoch in range(0, 50):
     running_loss = 0.0

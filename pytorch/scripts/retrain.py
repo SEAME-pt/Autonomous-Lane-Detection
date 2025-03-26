@@ -11,14 +11,13 @@ from torchmetrics.classification import JaccardIndex
 from model import LaneNet
 from loss import CombinedLoss 
 from dataset import LaneDataset, train_transforms
-from train import matplot_masks
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 image_paths = []
 mask_paths = []
 
-image_dir = os.path.join('.','training' ,'german_dataset') 
+image_dir = os.path.join('..','training' ,'german_dataset') 
 for root, dirs, files in os.walk(image_dir):
     if 'dataset10' in root:
         for file in files:
@@ -40,16 +39,50 @@ optimizer = optim.Adam(model.parameters(), lr=0.00001, weight_decay=1e-4)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=5)
 iou_metric = JaccardIndex(task="binary", num_classes=1).to(device)
 
-checkpoint_path = "./models/model_26.pth"
+checkpoint_path = "../models/model_26.pth"
 best_iou = -float('inf')  
 best_loss = float('inf')
-retrain_path = "./models/retrain.pth"
+retrain_path = ",./models/retrain.pth"
 if os.path.exists(checkpoint_path):
     checkpoint = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(checkpoint)
 
+def denormalize(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    if torch.is_tensor(image):
+        denorm_image = image.clone().cpu().numpy()
+    else:
+        denorm_image = image.copy()
+    if denorm_image.shape[0] == 3: # Ensure the image is in (C, H, W) format
+        denorm_image = denorm_image.transpose(1, 2, 0)  # Change to (H, W, C)
+    denorm_image = denorm_image * np.array(std) + np.array(mean) # Denormalize
+    # Clip values to [0, 1] range
+    return np.clip(denorm_image, 0, 1)
+
+def matplot_masks(images, masks, predicted_mask, path):
+    img = images.squeeze().cpu().numpy()
+    img = np.transpose(img, (1, 2, 0)) 
+    denorm_img = denormalize(img) 
+    true_mask = masks.squeeze().cpu().numpy()
+    pred_mask = predicted_mask.squeeze().cpu().numpy()
+    plt.style.use('grayscale')
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 5))
+    ax1.imshow(denorm_img)
+    ax1.set_title('Image')
+    ax1.axis('off')
+    ax2.imshow(true_mask, cmap='gray')
+    ax2.set_title('Truth Mask')
+    ax2.axis('off')
+    ax3.imshow(pred_mask, cmap='gray')
+    ax3.set_title('Predicted Mask')
+    ax3.axis('off')
+    plt.tight_layout()
+    plt.savefig(f'../debug/training_img/{epoch + 1}_{i}.png')
+    plt.close()
+    gc.collect() 
+    print(f"Iou: {iou.item():.4f}, Loss: {loss.item():.4f}, Iter: {i}, path: {path}")
+
 scaler = torch.amp.GradScaler()
-save_dir = "./models/"
+save_dir = "../models/"
 i = 0
 model.train()
 for epoch in range(0, 50):
