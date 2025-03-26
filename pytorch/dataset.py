@@ -10,8 +10,6 @@ from albumentations.pytorch import ToTensorV2
 
 train_transforms = A.Compose([
     A.Resize(height=512, width=512),  # Ensure consistent input size
-    A.RandomRotate90(p=0.5),
-    A.Transpose(p=0.5),
     A.HorizontalFlip(p=0.5),
     A.RandomBrightnessContrast(p=0.3),
     A.RandomGamma(p=0.3),
@@ -38,7 +36,7 @@ class LaneDataset(Dataset):
         return len(self.image_paths)
     
     def __getitem__(self, idx):
-        image = np.array(Image.open(self.image_paths[idx])) #rgb
+        image = np.array(Image.open(self.image_paths[idx]).convert("RGB"))
         if self.mask_paths:
             mask = np.array(Image.open(self.mask_paths[idx]).convert("L")) 
             augmented = self.transforms(image=image, mask=mask)
@@ -55,18 +53,27 @@ class LaneDataset(Dataset):
 
 image_paths = []
 mask_paths = []
+# # mask_dir = os.path.join('.', 'training' ,'town4_images', 'train_label')
+# # image_dir = os.path.join('.','training' ,'town4_images', 'train') 
+# # for root, dirs, files in os.walk(image_dir):
+# #     for file in files:
+# #         image_path = os.path.join(root, file)
+# #         file_name, file_ext = os.path.splitext(file)
+# #         mask_file_name = f"{file_name}_label{file_ext}"
+# #         mask_path = os.path.join(mask_dir, os.path.relpath(os.path.join(root, mask_file_name), image_dir))
+# #         mask_paths.append(mask_path)
+# #         image_paths.append(image_path)
 
-mask_dir = os.path.join('.', 'new_data', 'train_label')
-image_dir = os.path.join('.', 'new_data', 'train') 
+image_dir = os.path.join('.','training' ,'german_dataset') 
 for root, dirs, files in os.walk(image_dir):
     for file in files:
-        image_path = os.path.join(root, file)
-        file_name, file_ext = os.path.splitext(file)
-        mask_file_name = f"{file_name}_label{file_ext}"
-        mask_path = os.path.join(mask_dir, os.path.relpath(os.path.join(root, mask_file_name), image_dir))
-        mask_paths.append(mask_path)
-        image_paths.append(image_path)
-
+        if file.endswith('.jpg'):
+            image_path = os.path.join(root, file)
+            mask_path = image_path.replace('.jpg', '.png')
+            if not os.path.exists(mask_path):  
+                continue 
+            mask_paths.append(mask_path)
+            image_paths.append(image_path)
 
 dataset = LaneDataset(image_paths, mask_paths, transforms=train_transforms)
-train_loader = DataLoader(dataset, batch_size=4, shuffle=True,  num_workers=0, pin_memory=True)
+train_loader = DataLoader(dataset, batch_size=6, shuffle=True,  num_workers=0, pin_memory=True)
