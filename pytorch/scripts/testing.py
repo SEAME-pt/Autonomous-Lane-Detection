@@ -5,14 +5,13 @@ from model import LaneNet
 from torch.utils.data import DataLoader
 from dataset import LaneDataset, test_transforms
 import os
-from train import denormalize
 import numpy as np
 import matplotlib.pyplot as plt
 from torchmetrics import JaccardIndex
 
 device = torch.device("cuda")
 model = LaneNet().to(device)
-model.load_state_dict(torch.load('./models/model_4.pth', map_location=device))
+model.load_state_dict(torch.load('../models/model_4.pth', map_location=device))
 model.eval()
 
 image_paths = []
@@ -35,6 +34,17 @@ for root, dirs, files in os.walk(image_dir):
 test_dataset = LaneDataset(image_paths, transforms=test_transforms)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)
 
+def denormalize(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    if torch.is_tensor(image):
+        denorm_image = image.clone().cpu().numpy()
+    else:
+        denorm_image = image.copy()
+    if denorm_image.shape[0] == 3: # Ensure the image is in (C, H, W) format
+        denorm_image = denorm_image.transpose(1, 2, 0)  # Change to (H, W, C)
+    denorm_image = denorm_image * np.array(std) + np.array(mean) # Denormalize
+    # Clip values to [0, 1] range
+    return np.clip(denorm_image, 0, 1)
+
 def matplot_masks(images, predicted_mask, iter, path):
     img = images.squeeze().cpu().numpy()
     img = np.transpose(img, (1, 2, 0)) 
@@ -50,7 +60,7 @@ def matplot_masks(images, predicted_mask, iter, path):
     ax3.axis('off')
     plt.tight_layout()
     print(f'image path: {path}, iter: {iter}')
-    plt.savefig(f'./debug/test_img/{iter}.png')
+    plt.savefig(f'../debug/test_img/{iter}.png')
     plt.close()
 
 iter = 0

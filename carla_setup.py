@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 import signal
 import sys
-sys.path.append('/home/seame/Autonomous-Lane-Detection/pytorch') 
+sys.path.append('/home/seame/Autonomous-Lane-Detection/pytorch/scripts') 
 from model import LaneNet
 import threading
 import torch
@@ -15,7 +15,7 @@ from collections import deque
 
 device = torch.device("cuda")
 model = LaneNet().to(device)
-model.load_state_dict(torch.load('/home/seame/Autonomous-Lane-Detection/pytorch/models/lanes_20.pth', map_location=device))
+model.load_state_dict(torch.load('/home/seame/Autonomous-Lane-Detection/pytorch/models/model_26.pth', map_location=device))
 model.eval()
 
 vehicle = None
@@ -97,32 +97,33 @@ def calculate_steering(lane_mask, image_width):
     steering_angle = offset / max_offset
     # Normalize steering angle to [-1, 1] for CARLA control
     normalized_steering_angle = np.clip(steering_angle, -1, 1)
-    # car_center = width / 2
-    # error = (target_center - car_center) / (width / 2)  # Normalize error to [-1, 1]
-    
-    # Kp, Ki, Kd = 0.5, 0.1, 0.2  # PID coefficients (tune these)
-    
-    # global integral_error
-    # integral_error += error * dt
-    # integral_error = np.clip(integral_error, -1, 1)  # Anti-windup
-    
-    # derivative = (error - previous_steering) / dt
-    
-    # steering_angle = Kp * error + Ki * integral_error + Kd * derivative
-    
-    # # Smoothing
-    # steering_history.append(steering_angle)
-    # smoothed_steering = sum(steering_history) / len(steering_history)
-    
-    # # Adaptive response (less aggressive steering at high angles)
-    # adaptive_steering = np.sign(smoothed_steering) * (abs(smoothed_steering) ** 0.7)
-    
-    # # Update previous steering for next iteration
-    # previous_steering = error
-    
-    # # Normalize steering angle to [-1, 1] for CARLA control
-    # normalized_steering_angle = np.clip(adaptive_steering, -1, 1)
     return normalized_steering_angle, target_center
+
+# car_center = width / 2
+# error = (target_center - car_center) / (width / 2)  # Normalize error to [-1, 1]
+
+# Kp, Ki, Kd = 0.5, 0.1, 0.2  # PID coefficients (tune these)
+
+# global integral_error
+# integral_error += error * dt
+# integral_error = np.clip(integral_error, -1, 1)  # Anti-windup
+
+# derivative = (error - previous_steering) / dt
+
+# steering_angle = Kp * error + Ki * integral_error + Kd * derivative
+
+# # Smoothing
+# steering_history.append(steering_angle)
+# smoothed_steering = sum(steering_history) / len(steering_history)
+
+# # Adaptive response (less aggressive steering at high angles)
+# adaptive_steering = np.sign(smoothed_steering) * (abs(smoothed_steering) ** 0.7)
+
+# # Update previous steering for next iteration
+# previous_steering = error
+
+# # Normalize steering angle to [-1, 1] for CARLA control
+# normalized_steering_angle = np.clip(adaptive_steering, -1, 1)
 
 
 def process_image(image):
@@ -137,7 +138,7 @@ def process_image(image):
 
     lane_mask = torch.sigmoid(raw_output).squeeze().cpu() 
     lane_mask = (lane_mask > 0.5).numpy().astype(np.uint8)
-    # lane_mask = cv2.GaussianBlur(lane_mask, (5, 5), 0)
+    lane_mask = cv2.GaussianBlur(lane_mask, (5, 5), 0)
     steering, target_center = calculate_steering(lane_mask, 512)
 
     overlay = frame_resized.copy()
@@ -175,7 +176,7 @@ def start_simulation():
         print("Connection failed, start CARLA first")
         sys.exit(1)
 
-    world = client.load_world("Town03")
+    world = client.load_world("Town04")
     blueprint_library = world.get_blueprint_library()
     settings = world.get_settings()
     settings.synchronous_mode = True #ticks
