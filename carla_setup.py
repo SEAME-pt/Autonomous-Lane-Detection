@@ -9,13 +9,13 @@ sys.path.append('/home/seame/Autonomous-Lane-Detection/pytorch/scripts')
 from model import LaneNet
 import threading
 import torch
-import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
-from collections import deque
+from sklearn.cluster import DBSCAN
 
 device = torch.device("cuda")
 model = LaneNet().to(device)
-model.load_state_dict(torch.load('/home/seame/Autonomous-Lane-Detection/pytorch/models/model_26.pth', map_location=device))
+checkpoint = torch.load('/home/seame/Autonomous-Lane-Detection/pytorch/models/retrain.pth', map_location=device) 
+model.load_state_dict(checkpoint['model_state_dict']) 
 model.eval()
 
 vehicle = None
@@ -49,82 +49,41 @@ def update_camera_position(world):
         spectator.set_transform(carla.Transform(transform.location + carla.Location(z=40),  # Birdseye view
         carla.Rotation(pitch=-80)))
 
-steering_history = deque(maxlen=10)
-previous_steering = 0
-integral_error = 0
-dt = 0.1 
-
 def calculate_steering(lane_mask, image_width):
-    global previous_steering
     height, width = lane_mask.shape
-    roi_height = height * 3 // 4 
-    roi = lane_mask[-roi_height:, :]  
-
+    roi_height = height * 3 // 4
+    roi = lane_mask[-roi_height:, :]
     y_coords, x_coords = np.where(roi > 0)
-    if len(x_coords) == 0:
-        print("No lanes detected, continue straight")
-        return 0, None
-
-    image_center_x = width // 2
-    left_points = [(x, y) for x, y in zip(x_coords, y_coords) if x < image_center_x]
-    right_points = [(x, y) for x, y in zip(x_coords, y_coords) if x >= image_center_x]
+    if len(x_coords) < 15:  #minimum point threshold
+        return -10, None
+    left_x = x_coords[x_coords < width // 2]
+    right_x = x_coords[x_coords >= width // 2]
     
-    left_lane = None
-    right_lane = None
+    if len(left_x) < 15 or len(right_x) < 15: #single-lane behavior
+        if len(x_coords) > 15:
+            print("One lane")
+            weighted_center = np.average(x_coords, weights=(y_coords - y_coords.min() + 1)**2)
+            offset = weighted_center - (width / 2)
+            steering = np.clip(offset / (width * 0.4), -1, 1) #Less agressive steering
+            return steering * 0.6, None #even less steering gain single lane
+        return -10, None  
+    # Weighted average for lane centers
+    left_center = np.average(left_x, weights=(y_coords[x_coords < width//2] - y_coords.min() + 1))
+    right_center = np.average(right_x, weights=(y_coords[x_coords >= width//2] - y_coords.min() + 1))
+    lane_width = abs(right_center - left_center)
     
-    # Find the closest
-    if left_points:
-        left_lane = max(left_points, key=lambda p: (p[1], -p[0]))
-    
-    if right_points:
-        right_lane = max(right_points, key=lambda p: (p[1], p[0]))
-    
-    if left_lane is None and right_lane is None:
-        print("No valid lanes detected, keep straight.")
-        return 0, None
-
-    if left_lane is not None and right_lane is not None:
-        target_center = (left_lane[0] + right_lane[0]) / 2
-    elif left_lane is not None:
-        target_center = left_lane[0] + (width * 0.25)  # Assume road width
-    elif right_lane is not None:
-        target_center = right_lane[0] - (width * 0.25)
-
-    car_center = width / 2
-    offset = target_center - car_center
-    max_offset = width / 2
-    max_angle = 200 
-    steering_angle = offset / max_offset
-    # Normalize steering angle to [-1, 1] for CARLA control
-    normalized_steering_angle = np.clip(steering_angle, -1, 1)
-    return normalized_steering_angle, target_center
-
-# car_center = width / 2
-# error = (target_center - car_center) / (width / 2)  # Normalize error to [-1, 1]
-
-# Kp, Ki, Kd = 0.5, 0.1, 0.2  # PID coefficients (tune these)
-
-# global integral_error
-# integral_error += error * dt
-# integral_error = np.clip(integral_error, -1, 1)  # Anti-windup
-
-# derivative = (error - previous_steering) / dt
-
-# steering_angle = Kp * error + Ki * integral_error + Kd * derivative
-
-# # Smoothing
-# steering_history.append(steering_angle)
-# smoothed_steering = sum(steering_history) / len(steering_history)
-
-# # Adaptive response (less aggressive steering at high angles)
-# adaptive_steering = np.sign(smoothed_steering) * (abs(smoothed_steering) ** 0.7)
-
-# # Update previous steering for next iteration
-# previous_steering = error
-
-# # Normalize steering angle to [-1, 1] for CARLA control
-# normalized_steering_angle = np.clip(adaptive_steering, -1, 1)
-
+    target_center = (left_center + right_center) / 2
+    offset = target_center - (width / 2)
+    if abs(offset) < width * 0.03:
+        return 0.0, target_center #no steering for small offsets
+    # Progressive steering response - less aggressive
+    steering = np.arctan(offset / (lane_width * 0.6)) * (2/np.pi) #less aggressive steering
+    # Smoothing with memory 
+    if not hasattr(calculate_steering, 'history'):
+        calculate_steering.history = [0, 0, 0]
+    calculate_steering.history = calculate_steering.history[1:] + [steering]
+    smoothed = sum([0.2, 0.3, 0.5] * np.array(calculate_steering.history))
+    return np.clip(smoothed, -1, 1), target_center
 
 def process_image(image):
     global latest_image
@@ -134,8 +93,6 @@ def process_image(image):
     frame_tensor = transforms.functional.normalize(frame_tensor, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     with torch.no_grad():
         raw_output = model(frame_tensor)
-    # print(raw_output)
-
     lane_mask = torch.sigmoid(raw_output).squeeze().cpu() 
     lane_mask = (lane_mask > 0.5).numpy().astype(np.uint8)
     lane_mask = cv2.GaussianBlur(lane_mask, (5, 5), 0)
@@ -143,11 +100,9 @@ def process_image(image):
 
     overlay = frame_resized.copy()
     height, width = frame_resized.shape[:2]
-
     lane_mask_color = cv2.cvtColor(lane_mask * 255, cv2.COLOR_GRAY2BGR)
     lane_mask_color[..., 2] = lane_mask_color[..., 2] * 255 
     overlay = cv2.addWeighted(overlay, 0.6, lane_mask_color, 0.4, 0)
-        
     if target_center is not None:
         cv2.line(
             overlay,
@@ -156,11 +111,16 @@ def process_image(image):
             (255, 255, 0), 
             thickness=2,
         )
-
     latest_image = overlay
-    if vehicle is not None and vehicle.is_alive:
+    if steering == -10:
         control = vehicle.get_control()
-        control.throttle = max(0.8, 0.8 - abs(steering) * 0.8) 
+        control.throttle = 0.0
+        print("Braking")
+        control.brake = 0.7
+        vehicle.apply_control(control)
+    elif vehicle is not None and vehicle.is_alive:
+        control = vehicle.get_control()
+        control.throttle = max(0.7, 0.75 - abs(steering) * 0.9) 
         control.brake = 0.0
         control.steer = steering
         vehicle.apply_control(control)
@@ -176,7 +136,7 @@ def start_simulation():
         print("Connection failed, start CARLA first")
         sys.exit(1)
 
-    world = client.load_world("Town04")
+    world = client.load_world("Town05")
     blueprint_library = world.get_blueprint_library()
     settings = world.get_settings()
     settings.synchronous_mode = True #ticks
