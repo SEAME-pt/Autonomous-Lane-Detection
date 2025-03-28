@@ -15,7 +15,7 @@ from sklearn.cluster import DBSCAN
 device = torch.device("cuda")
 model = LaneNet().to(device)
 checkpoint = torch.load('/home/seame/Autonomous-Lane-Detection/pytorch/models/retrain.pth', map_location=device) 
-model.load_state_dict(checkpoint['model_state_dict']) 
+model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
 
 vehicle = None
@@ -48,26 +48,33 @@ def update_camera_position(world):
         transform = vehicle.get_transform()
         spectator.set_transform(carla.Transform(transform.location + carla.Location(z=40),  # Birdseye view
         carla.Rotation(pitch=-80)))
-
+i = 0
 def calculate_steering(lane_mask, image_width):
+    global i
     height, width = lane_mask.shape
+    kernel = np.ones((5,5), np.uint8)
+
+    lane_mask = cv2.morphologyEx(lane_mask, cv2.MORPH_OPEN, kernel)
     roi_height = height * 3 // 4
     roi = lane_mask[-roi_height:, :]
-    y_coords, x_coords = np.where(roi > 0)
-    if len(x_coords) < 15:  #minimum point threshold
-        return -10, None
+    y_coords, x_coords = np.where(roi > 0.9)
     left_x = x_coords[x_coords < width // 2]
     right_x = x_coords[x_coords >= width // 2]
+
+    def check_density(points, min_points=900, min_density=0.98):
+        hist = np.histogram(points, bins=5)[0]
+        print(f"points: {len(points)}, density: {np.mean(hist > min_points/5)}")
+        if len(points) < min_points:
+            return False
+        return np.mean(hist > min_points/5) > min_density
     
-    if len(left_x) < 15 or len(right_x) < 15: #single-lane behavior
-        if len(x_coords) > 15:
-            print("One lane")
-            weighted_center = np.average(x_coords, weights=(y_coords - y_coords.min() + 1)**2)
-            offset = weighted_center - (width / 2)
-            steering = np.clip(offset / (width * 0.4), -1, 1) #Less agressive steering
-            return steering * 0.6, None #even less steering gain single lane
-        return -10, None  
-    # Weighted average for lane centers
+    left_valid = check_density(left_x)
+    right_valid = check_density(right_x)
+    if not left_valid or not right_valid:
+        i += 1
+        print(f"Unvalid points{i}\n")
+        return 0.0, width/2
+    
     left_center = np.average(left_x, weights=(y_coords[x_coords < width//2] - y_coords.min() + 1))
     right_center = np.average(right_x, weights=(y_coords[x_coords >= width//2] - y_coords.min() + 1))
     lane_width = abs(right_center - left_center)
@@ -94,7 +101,7 @@ def process_image(image):
     with torch.no_grad():
         raw_output = model(frame_tensor)
     lane_mask = torch.sigmoid(raw_output).squeeze().cpu() 
-    lane_mask = (lane_mask > 0.5).numpy().astype(np.uint8)
+    lane_mask = (lane_mask > 0.9).numpy().astype(np.uint8)
     lane_mask = cv2.GaussianBlur(lane_mask, (5, 5), 0)
     steering, target_center = calculate_steering(lane_mask, 512)
 
@@ -112,17 +119,12 @@ def process_image(image):
             thickness=2,
         )
     latest_image = overlay
-    if steering == -10:
+    if vehicle is not None and vehicle.is_alive:
         control = vehicle.get_control()
-        control.throttle = 0.0
-        print("Braking")
-        control.brake = 0.7
-        vehicle.apply_control(control)
-    elif vehicle is not None and vehicle.is_alive:
-        control = vehicle.get_control()
-        control.throttle = max(0.7, 0.75 - abs(steering) * 0.9) 
+        control.throttle = max(0.7, 0.8 - abs(steering) * 0.9) 
         control.brake = 0.0
         control.steer = steering
+        control.brake = 0.0
         vehicle.apply_control(control)
 
 
@@ -136,7 +138,7 @@ def start_simulation():
         print("Connection failed, start CARLA first")
         sys.exit(1)
 
-    world = client.load_world("Town05")
+    world = client.load_world("Town04")
     blueprint_library = world.get_blueprint_library()
     settings = world.get_settings()
     settings.synchronous_mode = True #ticks
