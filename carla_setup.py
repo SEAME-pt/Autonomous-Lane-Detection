@@ -61,7 +61,7 @@ def calculate_steering(lane_mask, image_width):
     left_x = x_coords[x_coords < width // 2]
     right_x = x_coords[x_coords >= width // 2]
 
-    def check_density(points, min_points=900, min_density=0.98):
+    def check_density(points, min_points=900, min_density=0.8):
         hist = np.histogram(points, bins=5)[0]
         print(f"points: {len(points)}, density: {np.mean(hist > min_points/5)}")
         if len(points) < min_points:
@@ -138,7 +138,7 @@ def start_simulation():
         print("Connection failed, start CARLA first")
         sys.exit(1)
 
-    world = client.load_world("Town04")
+    world = client.load_world("Town05")
     blueprint_library = world.get_blueprint_library()
     settings = world.get_settings()
     settings.synchronous_mode = True #ticks

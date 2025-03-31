@@ -1,3 +1,5 @@
 pytorch/debug/
 pytorch/testing/
 pytorch/training/
+pytorch/.venv/
+pytorch/__pycache__/

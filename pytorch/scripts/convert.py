@@ -5,7 +5,9 @@ from model import LaneNet
 device = torch.device("cuda")
 model = LaneNet().to(device)
 
-model.load_state_dict(torch.load('model_26.pth', map_location=device))
+retrain_path = "../models/retrain.pth"
+checkpoint = torch.load(retrain_path)
+model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 
 # Criar entrada fictícia
