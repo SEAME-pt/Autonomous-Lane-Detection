@@ -82,3 +82,26 @@ python convert.py
 ```
 
 Then, you can convert to TensoRT in the Jetson.
+
+## Pre and Post processing the model
+
+You will need to convert this to cpp to run in TensorRt (C++) and not Pytorch (python), thi sis an example in python:
+
+```python
+    '''Load the model like this:'''
+    retrain_path = "../models/retrain.pth"
+    if os.path.exists(retrain_path):
+        checkpoint = torch.load(retrain_path)
+        model.load_state_dict(checkpoint["model_state_dict"])
+    model.eval() # evaluate the model
+
+    frame = np.array(image.raw_data).reshape((image.height, image.width, 4))[:, :, :3] #reshaping for compatibility with opencv
+    frame_resized = cv2.resize(frame, (512, 512)) #size of the training images for compatibility and better results
+    frame_tensor = transforms.ToTensor()(frame_resized).unsqueeze(0).to(device) #convert the images to tensors
+    frame_tensor = transforms.functional.normalize(frame_tensor, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) #normalize the images
+    with torch.no_grad():
+        raw_output = model(frame_tensor)
+    lane_mask = torch.sigmoid(raw_output).squeeze().cpu() #activation function, probabilities
+    lane_mask = (lane_mask > 0.9).numpy().astype(np.uint8) 
+    lane_mask = cv2.GaussianBlur(lane_mask, (5, 5), 0) #apply gaussian blur to the image
+```
