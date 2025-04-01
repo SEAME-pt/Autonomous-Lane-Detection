@@ -54,3 +54,4 @@ Here are some open source references and descriptions that could be used in the 
 
 1. OpenCV: OpenCV is a popular open-source computer vision library that provides a wide range of tools and algorithms for image and video processing. Participants could use OpenCV for pre-processing the video footage, extracting features, and identifying the lane markings.
     Link: [https://opencv.org/](https://opencv.org/)
+# trigger
