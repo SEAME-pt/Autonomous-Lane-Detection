@@ -132,16 +132,23 @@ cv::Mat preprocess_frame(const cv::Mat& frame) {
     resized.convertTo(resized, CV_32F, 1.0 / 255.0);
     cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
     
-    // Pontos de origem e destino para a transformação de perspectiva
+    // Ajuste os pontos para equilibrar os dois lados
     std::vector<cv::Point2f> src_points = {
-        {0, 512}, {512, 512}, {0, 0}, {512, 0} // Ajuste conforme necessário
+        {0, 512}, {512, 512}, {0, 0}, {512, 0}
     };
     std::vector<cv::Point2f> dst_points = {
-        {100, 512}, {412, 512}, {0, 0}, {512, 0}
+        {128, 512}, {384, 512}, {0, 0}, {512, 0} // Centraliza mais a base
     };
     cv::Mat transform = cv::getPerspectiveTransform(src_points, dst_points);
     cv::Mat warped;
     cv::warpPerspective(resized, warped, transform, cv::Size(512, 512));
+    
+    // Opcional: exibir a imagem transformada para depuração
+    cv::Mat debug_image;
+    cv::cvtColor(warped, debug_image, cv::COLOR_RGB2BGR);
+    debug_image.convertTo(debug_image, CV_8U, 255.0);
+    cv::imshow("Transformed Image", debug_image);
+    
     return warped;
 }
 
@@ -184,6 +191,7 @@ int main() {
         cv::imshow("Model Output 0.5", model_vis_05);
         cv::imshow("Model Output 0.38", model_vis_038);
         cv::imshow("Model Output 0.7", model_vis_07);
+        preprocess_frame(frame);
 
         if (cv::waitKey(1) == 'q')
             break;
