@@ -105,21 +105,39 @@ void signal_handler(int /*signal*/) {
     std::cout << "[INFO] Encerrando..." << std::endl;
 }
 
-cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) {
-    // Cria um cv::Mat de 512x512 com os dados do vetor (CV_32F)
-    cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
+// cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) {
+//     // Cria um cv::Mat de 512x512 com os dados do vetor (CV_32F)
+//     cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
     
-    // Clona a matriz para não modificar os dados originais
+//     // Clona a matriz para não modificar os dados originais
+//     cv::Mat outputClone = outputMat.clone();
+    
+//     // Aplica o threshold: pixels com valor > 0.5 se tornam 1, os demais 0
+//     cv::Mat binaryOutput;
+//     cv::threshold(outputClone, binaryOutput, threshold, 1, cv::THRESH_BINARY);
+    
+//     // Converte a imagem binarizada para 8 bits e escala para [0, 255] para exibição
+//     cv::Mat display;
+//     binaryOutput.convertTo(display, CV_8U, 255.0);
+    
+//     return display;
+// }
+
+cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) {
+    cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
     cv::Mat outputClone = outputMat.clone();
     
-    // Aplica o threshold: pixels com valor > 0.5 se tornam 1, os demais 0
+    // Aplica sigmoide para normalizar os valores para [0, 1]
+    cv::exp(-outputClone, outputClone); // e^(-x)
+    outputClone = 1.0 / (1.0 + outputClone); // 1 / (1 + e^(-x))
+    
+    // Aplica o threshold
     cv::Mat binaryOutput;
     cv::threshold(outputClone, binaryOutput, threshold, 1, cv::THRESH_BINARY);
     
-    // Converte a imagem binarizada para 8 bits e escala para [0, 255] para exibição
+    // Converte para exibição
     cv::Mat display;
     binaryOutput.convertTo(display, CV_8U, 255.0);
-    
     return display;
 }
 
