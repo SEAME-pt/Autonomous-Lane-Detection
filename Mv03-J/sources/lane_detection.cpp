@@ -94,34 +94,10 @@ cudaMemcpy(buffers[0], chw_input, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDe
     return output_data;
 }
 
-// Estrutura para armazenar informações da faixa
-struct LaneInfo {
-    cv::Point2f center;
-    bool detected;
-};
-
 void signal_handler(int /*signal*/) {
     running = false;
     std::cout << "[INFO] Encerrando..." << std::endl;
 }
-
-// cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) {
-//     // Cria um cv::Mat de 512x512 com os dados do vetor (CV_32F)
-//     cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
-    
-//     // Clona a matriz para não modificar os dados originais
-//     cv::Mat outputClone = outputMat.clone();
-    
-//     // Aplica o threshold: pixels com valor > 0.5 se tornam 1, os demais 0
-//     cv::Mat binaryOutput;
-//     cv::threshold(outputClone, binaryOutput, threshold, 1, cv::THRESH_BINARY);
-    
-//     // Converte a imagem binarizada para 8 bits e escala para [0, 255] para exibição
-//     cv::Mat display;
-//     binaryOutput.convertTo(display, CV_8U, 255.0);
-    
-//     return display;
-// }
 
 cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) {
     cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
@@ -173,13 +149,7 @@ int main() {
         if (!cap.read(frame) || frame.empty())
             break;
 
-        // No main(), após a inferência
         auto output = inferLaneNet(frame);
-
-        // Adiciona depuração para inspecionar o intervalo de valores
-        // double min_val, max_val;  // Alterado de float para double
-        // cv::minMaxLoc(cv::Mat(512, 512, CV_32F, output.data()), &min_val, &max_val);
-        // std::cout << "Output range: " << min_val << " to " << max_val << std::endl;
 
         cv::Mat model_vis_04 = visualizeOutput(output, float(0.4));
         cv::Mat model_vis_03  = visualizeOutput(output, float(0.3));
