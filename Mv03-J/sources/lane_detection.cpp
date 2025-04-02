@@ -105,7 +105,7 @@ LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size) {
     LaneInfo lane{};
     cv::Mat resized_mask;
     cv::resize(mask, resized_mask, original_size);
-    cv::threshold(resized_mask, resized_mask, 0.3, 1, cv::THRESH_BINARY);
+    cv::threshold(resized_mask, resized_mask, 0.1, 1, cv::THRESH_BINARY);
     auto M = cv::moments(resized_mask, true);
     if (M.m00 > original_size.width * original_size.height * 0.01) {
         lane.center = {float(M.m10 / M.m00), float(M.m01 / M.m00)};
