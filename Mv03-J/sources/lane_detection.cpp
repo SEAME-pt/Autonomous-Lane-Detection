@@ -148,12 +148,13 @@ int main() {
         if (!cap.read(frame) || frame.empty())
             break;
 
-        // Executa a inferência
+        // No main(), após a inferência
         auto output = inferLaneNet(frame);
 
-        float min_val, max_val;
+        // Adiciona depuração para inspecionar o intervalo de valores
+        double min_val, max_val;  // Alterado de float para double
         cv::minMaxLoc(cv::Mat(512, 512, CV_32F, output.data()), &min_val, &max_val);
-        std::cout << "Min: " << min_val << ", Max: " << max_val << std::endl;
+        std::cout << "Output range: " << min_val << " to " << max_val << std::endl;
 
         cv::Mat model_vis_01 = visualizeOutput(output, float(0.1));
         cv::Mat model_vis_03  = visualizeOutput(output, float(0.3));
