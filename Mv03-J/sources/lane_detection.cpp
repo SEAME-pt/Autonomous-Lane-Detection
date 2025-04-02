@@ -138,7 +138,6 @@ int main() {
     }
 
     jetracer.start();
-    jetracer.set_speed(120); // constante
 
     while (running) {
         cv::Mat frame;
