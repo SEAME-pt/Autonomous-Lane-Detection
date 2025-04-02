@@ -121,96 +121,255 @@ void signal_handler(int /*signal*/) {
     std::cout << "[INFO] Encerrando..." << std::endl;
 }
 
+
+
+#include <opencv2/opencv.hpp>
+#include <csignal>
+#include <atomic>
+#include <iostream>
+#include <vector>
+
+// Inclua as headers do TensorRT e CUDA conforme sua implementação
+#include "NvInfer.h"
+#include "cuda_runtime_api.h"
+#include "NvInferPlugin.h"
+
+// Caso você use o JetCar, inclua-o; aqui vamos comentar os usos dele
+// #include "jetracer.hpp"
+// JetCar jetracer(0x40, 0x60);
+
+using namespace nvinfer1;
+
+std::atomic<bool> running(true);
+
+// Handler para encerrar o programa com Ctrl+C
+void signal_handler(int /*signal*/) {
+    running = false;
+    std::cout << "[INFO] Encerrando..." << std::endl;
+}
+
+// ==================================================================
+// Funções auxiliares do TensorRT e processamento
+// ==================================================================
+
+// Estas variáveis (buffers, contexto, engine, runtime) devem ser declaradas de
+// acordo com sua implementação. Aqui usamos placeholders.
+void* buffers[2];         // buffer[0] para entrada, buffer[1] para saída
+IExecutionContext* context = nullptr;
+IRuntime* runtime = nullptr;
+ICudaEngine* engine = nullptr;
+
+// Inicializa o TensorRT (exemplo simplificado – adapte conforme necessário)
+void initializeTensorRT() {
+    // Certifique-se de gerar o engine plan no dispositivo alvo para evitar o aviso do TensorRT.
+    // Exemplo (pseudocódigo):
+    // initLibNvInferPlugins(&gLogger, "");
+    // auto modelData = loadTRTModel("seu_modelo.trt");
+    // runtime = createInferRuntime(gLogger);
+    // engine = runtime->deserializeCudaEngine(modelData.data(), modelData.size());
+    // context = engine->createExecutionContext();
+    // cudaMalloc(&buffers[0], 512 * 512 * 3 * sizeof(float));
+    // cudaMalloc(&buffers[1], 512 * 512 * sizeof(float));
+}
+
+// Libera recursos do TensorRT
+void destroyTensorRT() {
+    // cudaFree(buffers[0]);
+    // cudaFree(buffers[1]);
+    // if(context) context->destroy();
+    // if(engine) engine->destroy();
+    // if(runtime) runtime->destroy();
+}
+
+// Pré-processa o frame para o formato do modelo: redimensiona para 512x512,
+// converte para float, normaliza (0-1) e troca BGR por RGB.
+cv::Mat preprocess_frame(const cv::Mat& frame) {
+    cv::Mat resized;
+    cv::resize(frame, resized, cv::Size(512, 512));
+    resized.convertTo(resized, CV_32F, 1.0 / 255.0);
+    cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
+    return resized;
+}
+
+// Executa a inferência no frame e retorna um vetor com a saída (assumindo 1 classe)
+// OUTPUT_SIZE = 512 * 512
+std::vector<float> inferLaneNet(const cv::Mat& frame) {
+    cv::Mat input_tensor = preprocess_frame(frame);
+    const int INPUT_SIZE = 512 * 512 * 3;
+    float chw_input[INPUT_SIZE];
+    int idx = 0;
+    // Converte de HWC para CHW
+    for (int c = 0; c < 3; ++c) {
+        for (int i = 0; i < 512; ++i) {
+            for (int j = 0; j < 512; ++j) {
+                chw_input[idx++] = input_tensor.at<cv::Vec3f>(i, j)[c];
+            }
+        }
+    }
+    // Copia os dados para a GPU (supondo que buffers[0] foi alocado)
+    cudaMemcpy(buffers[0], chw_input, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+    
+    // Executa a inferência
+    context->executeV2(buffers);
+    
+    // Copia a saída da GPU para o host (OUTPUT_SIZE = 512*512)
+    std::vector<float> output_data(512 * 512);
+    cudaMemcpy(output_data.data(), buffers[1], 512 * 512 * sizeof(float), cudaMemcpyDeviceToHost);
+    
+    return output_data;
+}
+
+// Converte o vetor de saída em uma imagem para visualização
+// Assume que os valores estão na faixa [0, 1].
+cv::Mat visualizeOutput(const std::vector<float>& output_data) {
+    cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
+    cv::Mat outputClone = outputMat.clone();
+    cv::Mat display;
+    outputClone.convertTo(display, CV_8U, 255.0);
+    return display;
+}
+
+// ==================================================================
+// Função principal simplificada
+// ==================================================================
 int main() {
     signal(SIGINT, signal_handler);
     initializeTensorRT();
 
-    cv::VideoCapture cap(
-        "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=640, height=480, "
-        "format=(string)NV12, framerate=30/1 ! nvvidconv ! video/x-raw, "
-        "format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! "
-        "appsink drop=true max-buffers=1",
-        cv::CAP_GSTREAMER);
-
+    // Usamos um pipeline GStreamer simplificado.
+    // Se os erros de EGL ou CaptureSession persistirem, verifique se a câmera está conectada
+    // e se o pipeline é o recomendado para o seu dispositivo.
+    std::string pipeline = 
+        "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, format=NV12, framerate=30/1 ! "
+        "nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
+    
+    cv::VideoCapture cap(pipeline, cv::CAP_GSTREAMER);
     if (!cap.isOpened()) {
         std::cerr << "Erro ao abrir a câmera!" << std::endl;
         return -1;
     }
 
-    jetracer.start();
-    jetracer.set_speed(120); // constante
+    // Se não estiver usando o controle do carrinho, comente essas linhas para evitar os debug prints
+    // jetracer.start();
 
     while (running) {
         cv::Mat frame;
-        if (!cap.read(frame) || frame.empty()) break;
+        if (!cap.read(frame) || frame.empty())
+            break;
 
+        // Executa a inferência
         auto output = inferLaneNet(frame);
+        // Converte a saída em imagem
+        cv::Mat model_vis = visualizeOutput(output);
+        // Redimensiona a imagem do modelo para o mesmo tamanho da câmera (opcional)
+        cv::resize(model_vis, model_vis, frame.size());
 
-        // Recriar as máscaras a partir da saída do modelo
-        cv::Mat left_mask(512, 512, CV_32F, output.data());
-        cv::Mat right_mask(512, 512, CV_32F, output.data() + 512 * 512);
+        // Exibe janelas separadas: uma para a câmera, outra para a saída do modelo
+        cv::imshow("Camera", frame);
+        cv::imshow("Model Output", model_vis);
 
-        LaneInfo left_lane = detect_lane(left_mask, frame.size());
-        LaneInfo right_lane = detect_lane(right_mask, frame.size());
-
-        if (left_lane.detected)
-            cv::circle(frame, left_lane.center, 5, {0, 255, 0}, -1); // verde
-        if (right_lane.detected)
-            cv::circle(frame, right_lane.center, 5, {0, 0, 255}, -1); // vermelho
-
-        // --- Cálculo do ângulo de direção ---
-        float steering_angle = 0;
-        int desired_position_x = frame.cols / 2;
-        float offset_ratio = 0.25f;
-
-        if (left_lane.detected && right_lane.detected) {
-            desired_position_x = (left_lane.center.x + right_lane.center.x) / 2;
-        }
-        else if (left_lane.detected) {
-            desired_position_x = left_lane.center.x + frame.cols * offset_ratio;
-        }
-        else if (right_lane.detected) {
-            desired_position_x = right_lane.center.x - frame.cols * offset_ratio;
-        }
-
-        float offset = desired_position_x - (frame.cols / 2.0f);
-        steering_angle = std::clamp((offset / (frame.cols / 2.0f)) * 75.0f, -90.0f, 90.0f);
-
-        jetracer.smooth_steering(steering_angle, 15); // curva mais agressiva
-
-        // --- VISUALIZAÇÃO DA SAÍDA DO MODELO ---
-        // Cria uma imagem colorida com: Azul = direita, Verde = esquerda
-        cv::Mat color_mask;
-        std::vector<cv::Mat> channels = {
-            right_mask,  // Azul
-            left_mask,   // Verde
-            cv::Mat::zeros(512, 512, CV_32F)  // Vermelho
-        };
-        cv::merge(channels, color_mask);
-
-        // Converte para exibição
-        cv::Mat display_mask;
-        color_mask.convertTo(display_mask, CV_8UC3, 255.0);
-
-        // Redimensiona para o tamanho do frame original
-        cv::resize(display_mask, display_mask, frame.size());
-
-        // Combina lado a lado com a imagem da câmera
-        cv::Mat combined;
-        cv::hconcat(frame, display_mask, combined);
-
-        // Mostra na tela
-        cv::imshow("Original + Model Output", combined);
-
-        if (cv::waitKey(1) == 'q') break;
+        if (cv::waitKey(1) == 'q')
+            break;
     }
 
     destroyTensorRT();
-    jetracer.stop();
+    // jetracer.stop();
     cap.release();
     cv::destroyAllWindows();
     return 0;
 }
+
+
+// int main() {
+//     signal(SIGINT, signal_handler);
+//     initializeTensorRT();
+
+//     cv::VideoCapture cap(
+//         "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=640, height=480, "
+//         "format=(string)NV12, framerate=30/1 ! nvvidconv ! video/x-raw, "
+//         "format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! "
+//         "appsink drop=true max-buffers=1",
+//         cv::CAP_GSTREAMER);
+
+//     if (!cap.isOpened()) {
+//         std::cerr << "Erro ao abrir a câmera!" << std::endl;
+//         return -1;
+//     }
+
+//     jetracer.start();
+//     jetracer.set_speed(120); // constante
+
+//     while (running) {
+//         cv::Mat frame;
+//         if (!cap.read(frame) || frame.empty()) break;
+
+//         auto output = inferLaneNet(frame);
+
+//         // Recriar as máscaras a partir da saída do modelo
+//         cv::Mat left_mask(512, 512, CV_32F, output.data());
+//         cv::Mat right_mask(512, 512, CV_32F, output.data() + 512 * 512);
+
+//         LaneInfo left_lane = detect_lane(left_mask, frame.size());
+//         LaneInfo right_lane = detect_lane(right_mask, frame.size());
+
+//         if (left_lane.detected)
+//             cv::circle(frame, left_lane.center, 5, {0, 255, 0}, -1); // verde
+//         if (right_lane.detected)
+//             cv::circle(frame, right_lane.center, 5, {0, 0, 255}, -1); // vermelho
+
+//         // --- Cálculo do ângulo de direção ---
+//         float steering_angle = 0;
+//         int desired_position_x = frame.cols / 2;
+//         float offset_ratio = 0.25f;
+
+//         if (left_lane.detected && right_lane.detected) {
+//             desired_position_x = (left_lane.center.x + right_lane.center.x) / 2;
+//         }
+//         else if (left_lane.detected) {
+//             desired_position_x = left_lane.center.x + frame.cols * offset_ratio;
+//         }
+//         else if (right_lane.detected) {
+//             desired_position_x = right_lane.center.x - frame.cols * offset_ratio;
+//         }
+
+//         float offset = desired_position_x - (frame.cols / 2.0f);
+//         steering_angle = std::clamp((offset / (frame.cols / 2.0f)) * 75.0f, -90.0f, 90.0f);
+
+//         jetracer.smooth_steering(steering_angle, 15); // curva mais agressiva
+
+//         // --- VISUALIZAÇÃO DA SAÍDA DO MODELO ---
+//         // Cria uma imagem colorida com: Azul = direita, Verde = esquerda
+//         cv::Mat color_mask;
+//         std::vector<cv::Mat> channels = {
+//             right_mask,  // Azul
+//             left_mask,   // Verde
+//             cv::Mat::zeros(512, 512, CV_32F)  // Vermelho
+//         };
+//         cv::merge(channels, color_mask);
+
+//         // Converte para exibição
+//         cv::Mat display_mask;
+//         color_mask.convertTo(display_mask, CV_8UC3, 255.0);
+
+//         // Redimensiona para o tamanho do frame original
+//         cv::resize(display_mask, display_mask, frame.size());
+
+//         // Combina lado a lado com a imagem da câmera
+//         cv::Mat combined;
+//         cv::hconcat(frame, display_mask, combined);
+
+//         // Mostra na tela
+//         cv::imshow("Original + Model Output", combined);
+
+//         if (cv::waitKey(1) == 'q') break;
+//     }
+
+//     destroyTensorRT();
+//     jetracer.stop();
+//     cap.release();
+//     cv::destroyAllWindows();
+//     return 0;
+// }
 
 
 /*
