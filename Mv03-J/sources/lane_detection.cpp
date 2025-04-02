@@ -165,55 +165,28 @@ void signal_handler(int /*signal*/) {
     std::cout << "[INFO] Encerrando..." << std::endl;
 }
 
-int main() {
-    signal(SIGINT, signal_handler);
-    initializeTensorRT();
 
-    cv::VideoCapture cap(
-        "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, "
-        "format=(string)NV12, framerate=30/1 ! nvvidconv ! video/x-raw, "
-        "format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! "
-        "appsink drop=true max-buffers=1",
-        cv::CAP_GSTREAMER);
+while (running) {
+    cv::Mat frame;
+    if (!cap.read(frame) || frame.empty())
+        break;
 
-    if (!cap.isOpened()) {
-        std::cerr << "Erro ao abrir a câmera!" << std::endl;
-        return -1;
-    }
+    // Executa a inferência e obtém o vetor de saída
+    auto output = inferLaneNet(frame);
+    
+    // Converte o vetor de saída para uma imagem para visualização
+    cv::Mat model_vis = visualizeOutput(output);
 
-    // Se não precisar controlar o carrinho, pode comentar a linha abaixo
-    jetracer.start();
+    // Exibe a imagem da câmera em uma janela
+    cv::imshow("Camera", frame);
+    
+    // Exibe a saída do modelo em outra janela
+    cv::imshow("Model Output", model_vis);
 
-    while (running) {
-        cv::Mat frame;
-        if (!cap.read(frame) || frame.empty())
-            break;
-
-        // Executa a inferência e obtém o vetor de saída
-        auto output = inferLaneNet(frame);
-        
-        // Converte o vetor de saída para uma imagem para visualização
-        cv::Mat model_vis = visualizeOutput(output);
-
-        // Opcional: se quiser redimensionar a imagem do modelo para o mesmo tamanho do frame
-        cv::resize(model_vis, model_vis, frame.size());
-
-        // Combina lado a lado: à esquerda, o frame da câmera; à direita, a saída do modelo
-        cv::Mat combined;
-        cv::hconcat(frame, model_vis, combined);
-
-        cv::imshow("Camera + Model Output", combined);
-
-        if (cv::waitKey(1) == 'q')
-            break;
-    }
-
-    destroyTensorRT();
-    jetracer.stop();
-    cap.release();
-    cv::destroyAllWindows();
-    return 0;
+    if (cv::waitKey(1) == 'q')
+        break;
 }
+
 
 
 // int main() {
