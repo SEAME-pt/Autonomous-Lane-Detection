@@ -151,7 +151,7 @@ int main() {
     initializeTensorRT();
 
     cv::VideoCapture cap(
-        "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=640, height=480, "
+        "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, "
         "format=(string)NV12, framerate=30/1 ! nvvidconv ! video/x-raw, "
         "format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! "
         "appsink drop=true max-buffers=1",
