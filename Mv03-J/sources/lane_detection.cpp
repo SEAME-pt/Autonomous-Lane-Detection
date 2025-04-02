@@ -64,14 +64,14 @@ void destroyTensorRT() {
     delete runtime;
 }
 
-// Pré-processa imagem
-cv::Mat preprocess_frame(const cv::Mat& frame) {
-    cv::Mat resized;
-    cv::resize(frame, resized, cv::Size(512, 512));
-    resized.convertTo(resized, CV_32F, 1.0 / 255.0);
-    cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
-    return resized;
-}
+// // Pré-processa imagem
+// cv::Mat preprocess_frame(const cv::Mat& frame) {
+//     cv::Mat resized;
+//     cv::resize(frame, resized, cv::Size(512, 512));
+//     resized.convertTo(resized, CV_32F, 1.0 / 255.0);
+//     cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
+//     return resized;
+// }
 
 // Inferência do modelo TensorRT
 std::vector<float> inferLaneNet(const cv::Mat& frame) {
@@ -191,7 +191,7 @@ int main() {
         cv::imshow("Model Output 0.5", model_vis_05);
         cv::imshow("Model Output 0.38", model_vis_038);
         cv::imshow("Model Output 0.7", model_vis_07);
-        preprocess_frame(frame);
+        // preprocess_frame_distorcion(frame);
 
         if (cv::waitKey(1) == 'q')
             break;
