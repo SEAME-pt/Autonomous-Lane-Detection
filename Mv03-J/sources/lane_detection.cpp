@@ -135,7 +135,7 @@ void signal_handler(int /*signal*/) {
 //     return display;
 // }
 
-cv::Mat visualizeOutput(const std::vector<float>& output_data, floot threshold) {
+cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) {
     // Cria um cv::Mat de 512x512 com os dados do vetor (CV_32F)
     cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
     
