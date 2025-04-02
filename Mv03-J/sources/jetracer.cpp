@@ -139,8 +139,14 @@ void JetCar::set_motor_pwm(int channel, int value) {
 }
 
 void JetCar::set_speed(float speed) {
+
+    if(speed > 35)
+        speed = 35;
+
     speed = std::clamp(speed, -100.0f, 100.0f);
     int pwm_value = static_cast<int>(std::abs(speed) / 100.0f * 4095);
+
+    
 
     if (speed > 0) {
         set_motor_pwm(0, pwm_value);
