@@ -172,7 +172,7 @@ int main() {
 
         auto output = inferLaneNet(frame);
 
-        cv::imshow(l" output", output);
+        cv::imshow(" output", output);
 
         // Recriar as máscaras a partir da saída do modelo
         cv::Mat left_mask(512, 512, CV_32F, output.data());
