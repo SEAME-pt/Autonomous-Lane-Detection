@@ -131,6 +131,12 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) 
     cv::exp(-outputClone, outputClone); // e^(-x)
     outputClone = 1.0 / (1.0 + outputClone); // 1 / (1 + e^(-x))
     
+    // Calcula e exibe o mínimo e máximo após a sigmoide
+    double min_val, max_val;
+    cv::minMaxLoc(outputClone, &min_val, &max_val);
+    std::cout << "Sigmoid Output range (threshold " << threshold << "): " 
+              << min_val << " to " << max_val << std::endl;
+    
     // Aplica o threshold
     cv::Mat binaryOutput;
     cv::threshold(outputClone, binaryOutput, threshold, 1, cv::THRESH_BINARY);
@@ -140,7 +146,6 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) 
     binaryOutput.convertTo(display, CV_8U, 255.0);
     return display;
 }
-
 
 // ==================================================================
 // Função principal simplificada
@@ -170,9 +175,9 @@ int main() {
         auto output = inferLaneNet(frame);
 
         // Adiciona depuração para inspecionar o intervalo de valores
-        double min_val, max_val;  // Alterado de float para double
-        cv::minMaxLoc(cv::Mat(512, 512, CV_32F, output.data()), &min_val, &max_val);
-        std::cout << "Output range: " << min_val << " to " << max_val << std::endl;
+        // double min_val, max_val;  // Alterado de float para double
+        // cv::minMaxLoc(cv::Mat(512, 512, CV_32F, output.data()), &min_val, &max_val);
+        // std::cout << "Output range: " << min_val << " to " << max_val << std::endl;
 
         cv::Mat model_vis_01 = visualizeOutput(output, float(0.1));
         cv::Mat model_vis_03  = visualizeOutput(output, float(0.3));
