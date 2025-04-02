@@ -286,7 +286,7 @@ int main() {
         // float offset = desired_position_x - (frame.cols / 2.0f);
         // steering_angle = std::clamp((offset / (frame.cols / 2.0f)) * 75.0f, -90.0f, 90.0f);
 
-        jetracer.smooth_steering(steering_angle, 15); // curva mais agressiva
+        //jetracer.smooth_steering(steering_angle, 15); // curva mais agressiva
 
         // --- VISUALIZAÇÃO DA SAÍDA DO MODELO ---
         // Cria uma imagem colorida com: Azul = direita, Verde = esquerda
