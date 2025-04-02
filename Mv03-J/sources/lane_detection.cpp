@@ -177,7 +177,7 @@ int main() {
         cv::Mat model_vis_01 = visualizeOutput(output, float(0.1));
         cv::Mat model_vis_03  = visualizeOutput(output, float(0.3));
         cv::Mat model_vis_06  = visualizeOutput(output, float(0.6));
-        cv::Mat model_vis_09  = visualizeOutput(output, float(0.6));
+        cv::Mat model_vis_09  = visualizeOutput(output, float(0.9));
         
 
         cv::imshow("Camera", frame);
