@@ -65,26 +65,43 @@ void destroyTensorRT() {
 }
 
 // Pré-processa imagem
+// cv::Mat preprocess_frame(const cv::Mat& frame) {
+//     cv::Mat resized;
+//     cv::resize(frame, resized, cv::Size(512, 512));
+//     resized.convertTo(resized, CV_32F, 1.0 / 255.0);
+//     cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
+//     return resized;
+// }
+
 cv::Mat preprocess_frame(const cv::Mat& frame) {
     cv::Mat resized;
     cv::resize(frame, resized, cv::Size(512, 512));
     resized.convertTo(resized, CV_32F, 1.0 / 255.0);
     cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
+
+    // 👀 VISUALIZAÇÃO - converte para exibir com OpenCV
+    cv::Mat display_img;
+    cv::cvtColor(resized, display_img, cv::COLOR_RGB2BGR); // Volta pra BGR
+    display_img.convertTo(display_img, CV_8U, 255.0);      // De volta pra 0–255
+
+    cv::imshow("Pré-processado para o modelo", display_img);
+
     return resized;
 }
+
 
 // Inferência do modelo TensorRT
 std::vector<float> inferLaneNet(const cv::Mat& frame) {
     cv::Mat input_tensor = preprocess_frame(frame);
     float chw_input[INPUT_SIZE]; // [3 * 512 * 512]
     int idx = 0;
-for (int c = 0; c < 3; ++c) {
-    for (int i = 0; i < 512; ++i) {
-        for (int j = 0; j < 512; ++j) {
-            chw_input[idx++] = input_tensor.at<cv::Vec3f>(i, j)[c];
+    for (int c = 0; c < 3; ++c) {
+        for (int i = 0; i < 512; ++i) {
+            for (int j = 0; j < 512; ++j) {
+                chw_input[idx++] = input_tensor.at<cv::Vec3f>(i, j)[c];
+            }
         }
     }
-}
 cudaMemcpy(buffers[0], chw_input, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
 	
     //cudaMemcpy(buffers[0], input_tensor.data, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
