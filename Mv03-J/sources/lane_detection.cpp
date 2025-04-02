@@ -31,7 +31,7 @@ IExecutionContext* context = nullptr;
 void* buffers[2];
 
 const int INPUT_SIZE = 3 * 512 * 512;
-const int OUTPUT_SIZE = 2 * 512 * 512;
+const int OUTPUT_SIZE = 1 * 512 * 512;
 
 // Carrega modelo TRT serializado
 std::vector<char> loadTRTModel(const std::string& modelPath) {
@@ -65,29 +65,14 @@ void destroyTensorRT() {
 }
 
 // Pré-processa imagem
-// cv::Mat preprocess_frame(const cv::Mat& frame) {
-//     cv::Mat resized;
-//     cv::resize(frame, resized, cv::Size(512, 512));
-//     resized.convertTo(resized, CV_32F, 1.0 / 255.0);
-//     cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
-//     return resized;
-// }
-
 cv::Mat preprocess_frame(const cv::Mat& frame) {
     cv::Mat resized;
     cv::resize(frame, resized, cv::Size(512, 512));
     resized.convertTo(resized, CV_32F, 1.0 / 255.0);
     cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
-
-    // 👀 VISUALIZAÇÃO - converte para exibir com OpenCV
-    cv::Mat display_img;
-    cv::cvtColor(resized, display_img, cv::COLOR_RGB2BGR); // Volta pra BGR
-    display_img.convertTo(display_img, CV_8U, 255.0);      // De volta pra 0–255
-
-    cv::imshow("Pré-processado para o modelo", display_img);
-
     return resized;
 }
+
 
 
 // Inferência do modelo TensorRT
@@ -102,14 +87,33 @@ std::vector<float> inferLaneNet(const cv::Mat& frame) {
             }
         }
     }
-cudaMemcpy(buffers[0], chw_input, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
-	
-    //cudaMemcpy(buffers[0], input_tensor.data, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+    
+    cudaMemcpy(buffers[0], chw_input, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+    // Ou alternativamente: cudaMemcpy(buffers[0], input_tensor.data, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
     context->executeV2(buffers);
+    
     std::vector<float> output_data(OUTPUT_SIZE);
     cudaMemcpy(output_data.data(), buffers[1], OUTPUT_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
+    
     return output_data;
 }
+
+// Função para converter o vetor de saída em uma imagem para visualização
+cv::Mat visualizeOutput(const std::vector<float>& output_data) {
+    // Cria uma matriz de 512x512 com os dados da saída (sem copiar os dados)
+    cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
+    
+    // Clona a matriz para ter uma cópia dos dados
+    cv::Mat outputClone = outputMat.clone();
+    
+    // Converte os valores de [0, 1] para [0, 255] e de float para 8 bits para exibição
+    cv::Mat display;
+    outputClone.convertTo(display, CV_8U, 255.0);
+    
+    return display;
+}
+
+
 
 // Estrutura para armazenar informações da faixa
 struct LaneInfo {
@@ -117,12 +121,22 @@ struct LaneInfo {
     bool detected;
 };
 
-// // Detecção simples da faixa a partir da máscara
-// LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size) {
+
+// LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size, const std::string& label = "") {
 //     LaneInfo lane{};
 //     cv::Mat resized_mask;
 //     cv::resize(mask, resized_mask, original_size);
-//     cv::threshold(resized_mask, resized_mask, 0.1, 1, cv::THRESH_BINARY);
+
+//     // Aplicar threshold
+//     // cv::threshold(resized_mask, resized_mask, 0, 1, cv::THRESH_BINARY);
+
+//     // 🔍 Mostrar a máscara binarizada para debug
+//     cv::Mat debug_vis;
+//     resized_mask.convertTo(debug_vis, CV_8U, 255.0); // converte para 0–255
+//     cv::imshow(label + " Threshold", debug_vis);
+
+//     // cv::imshow(label + " mask", resized_mask);
+
 //     auto M = cv::moments(resized_mask, true);
 //     if (M.m00 > original_size.width * original_size.height * 0.01) {
 //         lane.center = {float(M.m10 / M.m00), float(M.m01 / M.m00)};
@@ -134,21 +148,20 @@ struct LaneInfo {
 // }
 
 
-LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size, const std::string& label = "") {
+LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size) {
     LaneInfo lane{};
     cv::Mat resized_mask;
     cv::resize(mask, resized_mask, original_size);
 
-    // Aplicar threshold
-    // cv::threshold(resized_mask, resized_mask, 0, 1, cv::THRESH_BINARY);
+    // Aplica threshold binário (ajuste o valor conforme o comportamento desejado)
+    cv::threshold(resized_mask, resized_mask, 0.1, 1.0, cv::THRESH_BINARY);
 
-    // 🔍 Mostrar a máscara binarizada para debug
+    // 🔍 Visualização da máscara unificada após threshold
     cv::Mat debug_vis;
-    resized_mask.convertTo(debug_vis, CV_8U, 255.0); // converte para 0–255
-    cv::imshow(label + " Threshold", debug_vis);
+    resized_mask.convertTo(debug_vis, CV_8U, 255.0);
+    cv::imshow("Máscara Unificada - Threshold", debug_vis);
 
-    // cv::imshow(label + " mask", resized_mask);
-
+    // Detecta centro da faixa
     auto M = cv::moments(resized_mask, true);
     if (M.m00 > original_size.width * original_size.height * 0.01) {
         lane.center = {float(M.m10 / M.m00), float(M.m01 / M.m00)};
@@ -158,6 +171,20 @@ LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size, const s
     }
     return lane;
 }
+
+
+// Função para exibir apenas os pixels classificados como 1
+cv::Mat displayClass1(const cv::Mat& modelOutput, float threshold = 0.5) {
+    cv::Mat binary;
+    // Aplica um threshold: pixels com valor maior que 'threshold' serão 1 e os demais 0
+    cv::threshold(modelOutput, binary, threshold, 1.0, cv::THRESH_BINARY);
+    
+    // Converte a imagem para 8 bits (0 a 255) para facilitar a visualização
+    cv::Mat display;
+    binary.convertTo(display, CV_8U, 255);
+    return display;
+}
+
 
 
 void signal_handler(int /*signal*/) {
@@ -188,6 +215,8 @@ int main() {
         if (!cap.read(frame) || frame.empty()) break;
 
         auto output = inferLaneNet(frame);
+
+        visualizeOutput(output);
 
         // cv::imshow(" output", output);
 
@@ -256,162 +285,3 @@ int main() {
     cv::destroyAllWindows();
     return 0;
 }
-
-
-/*
-int main() {
-    signal(SIGINT, signal_handler);
-    initializeTensorRT();
-
-    cv::VideoCapture cap(
-        "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=640, height=480, "
-        "format=(string)NV12, framerate=30/1 ! nvvidconv ! video/x-raw, "
-        "format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! "
-        "appsink drop=true max-buffers=1",
-        cv::CAP_GSTREAMER);
-
-    if (!cap.isOpened()) {
-        std::cerr << "Erro ao abrir a câmera!" << std::endl;
-        return -1;
-    }
-
-    jetracer.start();
-    jetracer.set_speed(90);
-
-    while (running) {
-        cv::Mat frame;
-        if (!cap.read(frame) || frame.empty()) break;
-
-        auto output = inferLaneNet(frame);
-
-        cv::Mat left_mask(512, 512, CV_32F, output.data());
-        cv::Mat right_mask(512, 512, CV_32F, output.data() + 512 * 512);
-
-        LaneInfo left_lane = detect_lane(left_mask, frame.size());
-        LaneInfo right_lane = detect_lane(right_mask, frame.size());
-
-        if (left_lane.detected)
-            cv::circle(frame, left_lane.center, 5, {0, 255, 0}, -1); // verde
-        if (right_lane.detected)
-            cv::circle(frame, right_lane.center, 5, {0, 0, 255}, -1); // vermelho
-
-        // --- NOVA LÓGICA DE DIREÇÃO ---
-        float steering_angle = 0;
-        int desired_position_x = frame.cols / 2;  // posição desejada padrão = centro da imagem
-        float offset_ratio = 0.25f;               // distância para se manter ao lado da faixa (25% da largura)
-
-        if (left_lane.detected && right_lane.detected) {
-            // Centralizar entre as duas faixas
-            desired_position_x = (left_lane.center.x + right_lane.center.x) / 2;
-        }
-        else if (left_lane.detected) {
-            // Manter-se à direita da faixa esquerda
-            desired_position_x = left_lane.center.x + frame.cols * offset_ratio;
-        }
-        else if (right_lane.detected) {
-            // Manter-se à esquerda da faixa direita
-            desired_position_x = right_lane.center.x - frame.cols * offset_ratio;
-        }
-
-        // Converter posição desejada em ângulo de direção
-        float offset = desired_position_x - (frame.cols / 2.0f);
-//        steering_angle = std::clamp((offset / (frame.cols / 2.0f)) * 45.0f, -45.0f, 45.0f);
-        steering_angle = std::clamp((offset / (frame.cols / 2.0f)) * 75.0f, -45.0f, 45.0f);
-
-        // Aplicar direção e velocidade
-        //jetracer.smooth_steering(steering_angle, 5);
-        jetracer.smooth_steering(steering_angle, 15);
-        if (left_lane.detected || right_lane.detected)
-            jetracer.set_speed(120);
-        else
-            jetracer.set_speed(0);
-
-//        jetracer.set_speed(120);
-
-        cv::imshow("Lane Detection", frame);
-        if (cv::waitKey(1) == 'q') break;
-    }
-
-    destroyTensorRT();
-    jetracer.stop();
-    cap.release();
-    cv::destroyAllWindows();
-    return 0;
-}
-*/
-
-/*
-int main() {
-    signal(SIGINT, signal_handler);
-    initializeTensorRT();
-
-    cv::VideoCapture cap(
-        "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=640, height=480, "
-        "format=(string)NV12, framerate=30/1 ! nvvidconv ! video/x-raw, "
-        "format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! "
-        "appsink drop=true max-buffers=1",
-        cv::CAP_GSTREAMER);
-
-    if (!cap.isOpened()) {
-        std::cerr << "Erro ao abrir a câmera!" << std::endl;
-        return -1;
-    }
-
-    jetracer.start();
-
-    while (running) {
-        cv::Mat frame;
-        if (!cap.read(frame) || frame.empty()) break;
-
-        auto output = inferLaneNet(frame);
-
-        cv::Mat left_mask(512, 512, CV_32F, output.data());
-        cv::Mat right_mask(512, 512, CV_32F, output.data() + 512 * 512);
-
-        LaneInfo left_lane = detect_lane(left_mask, frame.size());
-        LaneInfo right_lane = detect_lane(right_mask, frame.size());
-
-        if (left_lane.detected)
-            cv::circle(frame, left_lane.center, 5, {0, 255, 0}, -1);
-        if (right_lane.detected)
-            cv::circle(frame, right_lane.center, 5, {0, 0, 255}, -1);
-
-        float steering_angle = 0;
-        if (left_lane.detected && right_lane.detected) {
-            float lane_center = (left_lane.center.x + right_lane.center.x) / 2;
-            steering_angle = (lane_center - frame.cols / 2) / (frame.cols / 2) * 45;
-        }
-
-        // Compensação quando apenas uma faixa é detectada
-        else if (left_lane.detected) {
-            float offset = left_lane.center.x + (frame.cols / 4.0f) - (frame.cols / 2.0f);
-            steering_angle = (offset / (frame.cols / 2.0f)) * 45.0f;
-
-    // Compensação extra para manter mais centralizado
-            steering_angle -= 10.0f;
-        }
-        else if (right_lane.detected) {
-            float offset = right_lane.center.x - (frame.cols * 3.0f / 4.0f) - (frame.cols / 2.0f);
-            steering_angle = (offset / (frame.cols / 2.0f)) * 45.0f;
-
-    // Compensação extra para manter mais centralizado
-            steering_angle += 10.0f;
-        }
-
-
-        jetracer.smooth_steering(steering_angle, 5);
-        jetracer.set_speed(120);
-//        jetracer.set_speed(left_lane.detected || right_lane.detected ? 35 : 0);
-
-        cv::imshow("Lane Detection", frame);
-        if (cv::waitKey(1) == 'q') break;
-    }
-
-    destroyTensorRT();
-    jetracer.stop();
-    cap.release();
-    cv::destroyAllWindows();
-    return 0;
-}
-
-*/
