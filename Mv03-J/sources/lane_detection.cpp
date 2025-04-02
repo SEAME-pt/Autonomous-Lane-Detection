@@ -181,14 +181,14 @@ int main() {
         // cv::minMaxLoc(cv::Mat(512, 512, CV_32F, output.data()), &min_val, &max_val);
         // std::cout << "Output range: " << min_val << " to " << max_val << std::endl;
 
-        cv::Mat model_vis_01 = visualizeOutput(output, float(0.1));
+        cv::Mat model_vis_04 = visualizeOutput(output, float(0.4));
         cv::Mat model_vis_03  = visualizeOutput(output, float(0.3));
         cv::Mat model_vis_06  = visualizeOutput(output, float(0.6));
         cv::Mat model_vis_05  = visualizeOutput(output, float(0.5));
         
 
         cv::imshow("Camera", frame);
-        cv::imshow("Model Output 0.1", model_vis_01);
+        cv::imshow("Model Output 0.4", model_vis_04);
         cv::imshow("Model Output 0.3", model_vis_03);
         cv::imshow("Model Output 0.6", model_vis_06);
         cv::imshow("Model Output 0.5", model_vis_05);
