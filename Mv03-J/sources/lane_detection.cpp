@@ -152,7 +152,7 @@ int main() {
         auto output = inferLaneNet(frame);
 
         float min_val, max_val;
-        cv::minMaxLoc(cv::Mat(512, 512, CV_32F, output_data.data()), &min_val, &max_val);
+        cv::minMaxLoc(cv::Mat(512, 512, CV_32F, output.data()), &min_val, &max_val);
         std::cout << "Min: " << min_val << ", Max: " << max_val << std::endl;
 
         cv::Mat model_vis_01 = visualizeOutput(output, float(0.1));
