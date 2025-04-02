@@ -121,33 +121,6 @@ struct LaneInfo {
     bool detected;
 };
 
-
-// LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size, const std::string& label = "") {
-//     LaneInfo lane{};
-//     cv::Mat resized_mask;
-//     cv::resize(mask, resized_mask, original_size);
-
-//     // Aplicar threshold
-//     // cv::threshold(resized_mask, resized_mask, 0, 1, cv::THRESH_BINARY);
-
-//     // 🔍 Mostrar a máscara binarizada para debug
-//     cv::Mat debug_vis;
-//     resized_mask.convertTo(debug_vis, CV_8U, 255.0); // converte para 0–255
-//     cv::imshow(label + " Threshold", debug_vis);
-
-//     // cv::imshow(label + " mask", resized_mask);
-
-//     auto M = cv::moments(resized_mask, true);
-//     if (M.m00 > original_size.width * original_size.height * 0.01) {
-//         lane.center = {float(M.m10 / M.m00), float(M.m01 / M.m00)};
-//         lane.detected = true;
-//     } else {
-//         lane.detected = false;
-//     }
-//     return lane;
-// }
-
-
 LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size) {
     LaneInfo lane{};
     cv::Mat resized_mask;
@@ -208,75 +181,31 @@ int main() {
         return -1;
     }
 
+    // Se não precisar controlar o carrinho, pode comentar a linha abaixo
     jetracer.start();
 
     while (running) {
         cv::Mat frame;
-        if (!cap.read(frame) || frame.empty()) break;
+        if (!cap.read(frame) || frame.empty())
+            break;
 
+        // Executa a inferência e obtém o vetor de saída
         auto output = inferLaneNet(frame);
+        
+        // Converte o vetor de saída para uma imagem para visualização
+        cv::Mat model_vis = visualizeOutput(output);
 
-        visualizeOutput(output);
+        // Opcional: se quiser redimensionar a imagem do modelo para o mesmo tamanho do frame
+        cv::resize(model_vis, model_vis, frame.size());
 
-        // cv::imshow(" output", output);
-
-        // Recriar as máscaras a partir da saída do modelo
-        cv::Mat left_mask(512, 512, CV_32F, output.data());
-        cv::Mat right_mask(512, 512, CV_32F, output.data() + 512 * 512);
-
-        LaneInfo left_lane = detect_lane(left_mask, frame.size());
-        LaneInfo right_lane = detect_lane(right_mask, frame.size());
-
-        if (left_lane.detected)
-            cv::circle(frame, left_lane.center, 5, {0, 255, 0}, -1); // verde
-        if (right_lane.detected)
-            cv::circle(frame, right_lane.center, 5, {0, 0, 255}, -1); // vermelho
-
-        // --- Cálculo do ângulo de direção ---
-        float steering_angle = 0;
-        int desired_position_x = frame.cols / 2;
-        float offset_ratio = 0.25f;
-
-        if (left_lane.detected && right_lane.detected) {
-            desired_position_x = (left_lane.center.x + right_lane.center.x) / 2;
-        }
-        else if (left_lane.detected) {
-            desired_position_x = left_lane.center.x + frame.cols * offset_ratio;
-        }
-        else if (right_lane.detected) {
-            desired_position_x = right_lane.center.x - frame.cols * offset_ratio;
-        }
-
-        float offset = desired_position_x - (frame.cols / 2.0f);
-        steering_angle = std::clamp((offset / (frame.cols / 2.0f)) * 75.0f, -90.0f, 90.0f);
-
-        jetracer.smooth_steering(steering_angle, 15); // curva mais agressiva
-
-        // --- VISUALIZAÇÃO DA SAÍDA DO MODELO ---
-        // Cria uma imagem colorida com: Azul = direita, Verde = esquerda
-        cv::Mat color_mask;
-        std::vector<cv::Mat> channels = {
-            right_mask,  // Azul
-            left_mask,   // Verde
-            cv::Mat::zeros(512, 512, CV_32F)  // Vermelho
-        };
-        cv::merge(channels, color_mask);
-
-        // Converte para exibição
-        cv::Mat display_mask;
-        color_mask.convertTo(display_mask, CV_8UC3, 255.0);
-
-        // Redimensiona para o tamanho do frame original
-        cv::resize(display_mask, display_mask, frame.size());
-
-        // Combina lado a lado com a imagem da câmera
+        // Combina lado a lado: à esquerda, o frame da câmera; à direita, a saída do modelo
         cv::Mat combined;
-        cv::hconcat(frame, display_mask, combined);
+        cv::hconcat(frame, model_vis, combined);
 
-        // Mostra na tela
-        cv::imshow("Original + Model Output", combined);
+        cv::imshow("Camera + Model Output", combined);
 
-        if (cv::waitKey(1) == 'q') break;
+        if (cv::waitKey(1) == 'q')
+            break;
     }
 
     destroyTensorRT();
@@ -285,3 +214,98 @@ int main() {
     cv::destroyAllWindows();
     return 0;
 }
+
+
+// int main() {
+//     signal(SIGINT, signal_handler);
+//     initializeTensorRT();
+
+//     cv::VideoCapture cap(
+//         "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, "
+//         "format=(string)NV12, framerate=30/1 ! nvvidconv ! video/x-raw, "
+//         "format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! "
+//         "appsink drop=true max-buffers=1",
+//         cv::CAP_GSTREAMER);
+
+//     if (!cap.isOpened()) {
+//         std::cerr << "Erro ao abrir a câmera!" << std::endl;
+//         return -1;
+//     }
+
+//     jetracer.start();
+
+//     while (running) {
+//         cv::Mat frame;
+//         if (!cap.read(frame) || frame.empty()) break;
+
+//         auto output = inferLaneNet(frame);
+
+//         visualizeOutput(output);
+
+//         // cv::imshow(" output", output);
+
+//         // Recriar as máscaras a partir da saída do modelo
+//         cv::Mat left_mask(512, 512, CV_32F, output.data());
+//         cv::Mat right_mask(512, 512, CV_32F, output.data() + 512 * 512);
+
+//         // LaneInfo left_lane = detect_lane(left_mask, frame.size());
+//         // LaneInfo right_lane = detect_lane(right_mask, frame.size());
+
+//         // if (left_lane.detected)
+//         //     cv::circle(frame, left_lane.center, 5, {0, 255, 0}, -1); // verde
+//         // if (right_lane.detected)
+//         //     cv::circle(frame, right_lane.center, 5, {0, 0, 255}, -1); // vermelho
+
+//         // // --- Cálculo do ângulo de direção ---
+//         // float steering_angle = 0;
+//         // int desired_position_x = frame.cols / 2;
+//         // float offset_ratio = 0.25f;
+
+//         // if (left_lane.detected && right_lane.detected) {
+//         //     desired_position_x = (left_lane.center.x + right_lane.center.x) / 2;
+//         // }
+//         // else if (left_lane.detected) {
+//         //     desired_position_x = left_lane.center.x + frame.cols * offset_ratio;
+//         // }
+//         // else if (right_lane.detected) {
+//         //     desired_position_x = right_lane.center.x - frame.cols * offset_ratio;
+//         // }
+
+//         // float offset = desired_position_x - (frame.cols / 2.0f);
+//         // steering_angle = std::clamp((offset / (frame.cols / 2.0f)) * 75.0f, -90.0f, 90.0f);
+
+//         jetracer.smooth_steering(steering_angle, 15); // curva mais agressiva
+
+//         // --- VISUALIZAÇÃO DA SAÍDA DO MODELO ---
+//         // Cria uma imagem colorida com: Azul = direita, Verde = esquerda
+//         cv::Mat color_mask;
+//         std::vector<cv::Mat> channels = {
+//             right_mask,  // Azul
+//             left_mask,   // Verde
+//             cv::Mat::zeros(512, 512, CV_32F)  // Vermelho
+//         };
+//         cv::merge(channels, color_mask);
+
+//         // Converte para exibição
+//         cv::Mat display_mask;
+//         color_mask.convertTo(display_mask, CV_8UC3, 255.0);
+
+//         // Redimensiona para o tamanho do frame original
+//         cv::resize(display_mask, display_mask, frame.size());
+
+//         // Combina lado a lado com a imagem da câmera
+//         cv::Mat combined;
+//         cv::hconcat(frame, display_mask, combined);
+
+//         // Mostra na tela
+//         cv::imshow("Original + Model Output", combined);
+
+//         if (cv::waitKey(1) == 'q') break;
+//     }
+
+//     destroyTensorRT();
+//     jetracer.stop();
+//     cap.release();
+//     cv::destroyAllWindows();
+//     return 0;
+// }
