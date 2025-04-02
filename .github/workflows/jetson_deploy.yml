@@ -19,5 +19,10 @@ jobs:
           script: |
             cd /home/jetson/jetson-nano-tests
             git pull origin jetson-nano-tests
-            g++ lane_detection.cpp -o lane_detection `pkg-config --cflags --libs opencv4` -lnvinfer -lnvonnxparser -lcudart
+            g++ lane_detection.cpp jetracer.cpp -o lane_detection \
+              `pkg-config --cflags --libs opencv4` \
+              -lnvinfer -lnvonnxparser -lcudart \
+              -lSDL2
+
+
 

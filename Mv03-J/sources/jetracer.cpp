@@ -198,6 +198,28 @@ void JetCar::process_joystick() {
         }
     }*/
 
+    // while (running_) {
+    //     SDL_JoystickUpdate();
+
+    //     if (SDL_JoystickGetAxis(joystick, 3)) {
+    //         std::cout << "[DEBUG] process_joystick x_button clicked !" << std::endl;
+    //         circle_mode_ = ! circle_mode_;
+    //         std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    //     }
+
+    //     if (circle_mode_) {
+    //         set_speed(30);
+    //         smooth_steering(30, 5);
+    //         //std::this_thread::sleep_for(std::chrono::milliseconds(2000));            
+    //     } else {
+    //         int left_joystick_y = SDL_JoystickGetAxis(joystick, 1);
+    //         int right_joystick_x = SDL_JoystickGetAxis(joystick, 2);
+    //         set_speed(-left_joystick_y / 32767.0f * 100);
+    //         smooth_steering(right_joystick_x / 32767.0f * MAX_ANGLE_, 10);
+    //     }
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    // }
+
     while (running_) {
         SDL_JoystickUpdate();
 
