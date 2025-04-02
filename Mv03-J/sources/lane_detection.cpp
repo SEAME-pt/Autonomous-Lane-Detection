@@ -130,7 +130,7 @@ LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size, const s
     resized_mask.convertTo(debug_vis, CV_8U, 255.0); // converte para 0–255
     cv::imshow(label + " Threshold", debug_vis);
 
-    cv::imshow(label + " mask", resized_mask);
+    // cv::imshow(label + " mask", resized_mask);
 
     auto M = cv::moments(resized_mask, true);
     if (M.m00 > original_size.width * original_size.height * 0.01) {
@@ -171,6 +171,8 @@ int main() {
         if (!cap.read(frame) || frame.empty()) break;
 
         auto output = inferLaneNet(frame);
+
+        cv::imshow(l" output", output);
 
         // Recriar as máscaras a partir da saída do modelo
         cv::Mat left_mask(512, 512, CV_32F, output.data());
