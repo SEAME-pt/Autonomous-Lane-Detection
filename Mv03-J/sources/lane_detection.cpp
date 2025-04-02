@@ -127,11 +127,13 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) 
     cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
     cv::Mat outputClone = outputMat.clone();
     
-    // Aplica sigmoide para normalizar os valores para [0, 1]
-    cv::exp(-outputClone, outputClone); // e^(-x)
-    outputClone = 1.0 / (1.0 + outputClone); // 1 / (1 + e^(-x))
+    // Aplica sigmoide com fator de escala k = 0.1
+    float k = 0.1;
+    outputClone *= k; // Multiplica os logits por k
+    cv::exp(-outputClone, outputClone);
+    outputClone = 1.0 / (1.0 + outputClone);
     
-    // Calcula e exibe o mínimo e máximo após a sigmoide
+    // Exibe mínimo e máximo
     double min_val, max_val;
     cv::minMaxLoc(outputClone, &min_val, &max_val);
     std::cout << "Sigmoid Output range (threshold " << threshold << "): " 
