@@ -135,7 +135,7 @@ void signal_handler(int /*signal*/) {
 //     return display;
 // }
 
-cv::Mat visualizeOutput(const std::vector<float>& output_data) {
+cv::Mat visualizeOutput(const std::vector<float>& output_data, floot threshold) {
     // Cria um cv::Mat de 512x512 com os dados do vetor (CV_32F)
     cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
     
@@ -144,7 +144,7 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data) {
     
     // Aplica o threshold: pixels com valor > 0.5 se tornam 1, os demais 0
     cv::Mat binaryOutput;
-    cv::threshold(outputClone, binaryOutput, 0.1, 1, cv::THRESH_BINARY);
+    cv::threshold(outputClone, binaryOutput, threshold, 1, cv::THRESH_BINARY);
     
     // Converte a imagem binarizada para 8 bits e escala para [0, 255] para exibição
     cv::Mat display;
@@ -182,13 +182,19 @@ int main() {
         // Executa a inferência
         auto output = inferLaneNet(frame);
         // Converte a saída em imagem
-        cv::Mat model_vis = visualizeOutput(output);
+        cv::Mat model_vis_01 = visualizeOutput(output, float(0.1));
+        cv::Mat model_vis_03  = visualizeOutput(output, float(0.3));
+        cv::Mat model_vis_06  = visualizeOutput(output, float(0.6));
+        cv::Mat model_vis_09  = visualizeOutput(output, float(0.6));
         // Redimensiona a imagem do modelo para o mesmo tamanho da câmera (opcional)
-        cv::resize(model_vis, model_vis, frame.size());
+        // cv::resize(model_vis, model_vis, frame.size());
 
         // Exibe janelas separadas: uma para a câmera, outra para a saída do modelo
         cv::imshow("Camera", frame);
-        cv::imshow("Model Output", model_vis);
+        cv::imshow("Model Output 0.1", model_vis_01);
+        cv::imshow("Model Output 0.3", model_vis_03);
+        cv::imshow("Model Output 0.6", model_vis_06);
+        cv::imshow("Model Output 0.9", model_vis_09);
 
         if (cv::waitKey(1) == 'q')
             break;
