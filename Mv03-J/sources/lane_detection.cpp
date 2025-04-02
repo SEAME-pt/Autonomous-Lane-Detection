@@ -123,7 +123,7 @@ LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size, const s
     cv::resize(mask, resized_mask, original_size);
 
     // Aplicar threshold
-    cv::threshold(resized_mask, resized_mask, 0, 1, cv::THRESH_BINARY);
+    // cv::threshold(resized_mask, resized_mask, 0, 1, cv::THRESH_BINARY);
 
     // 🔍 Mostrar a máscara binarizada para debug
     cv::Mat debug_vis;
