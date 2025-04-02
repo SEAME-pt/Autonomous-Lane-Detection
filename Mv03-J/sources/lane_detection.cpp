@@ -104,7 +104,7 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) 
     cv::Mat outputClone = outputMat.clone();
     
     // Aplica sigmoide com fator de escala k = 0.1
-    float k = 0.1;
+    float k = 0.2;
     outputClone *= k; // Multiplica os logits por k
     cv::exp(-outputClone, outputClone);
     outputClone = 1.0 / (1.0 + outputClone);
@@ -123,6 +123,26 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) 
     cv::Mat display;
     binaryOutput.convertTo(display, CV_8U, 255.0);
     return display;
+}
+
+
+cv::Mat preprocess_frame(const cv::Mat& frame) {
+    cv::Mat resized;
+    cv::resize(frame, resized, cv::Size(512, 512));
+    resized.convertTo(resized, CV_32F, 1.0 / 255.0);
+    cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
+    
+    // Pontos de origem e destino para a transformação de perspectiva
+    std::vector<cv::Point2f> src_points = {
+        {0, 512}, {512, 512}, {0, 0}, {512, 0} // Ajuste conforme necessário
+    };
+    std::vector<cv::Point2f> dst_points = {
+        {100, 512}, {412, 512}, {0, 0}, {512, 0}
+    };
+    cv::Mat transform = cv::getPerspectiveTransform(src_points, dst_points);
+    cv::Mat warped;
+    cv::warpPerspective(resized, warped, transform, cv::Size(512, 512));
+    return warped;
 }
 
 // ==================================================================
