@@ -100,40 +100,59 @@ struct LaneInfo {
     bool detected;
 };
 
-// Detecção simples da faixa a partir da máscara
-LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size) {
-    LaneInfo lane{};
-    cv::Mat resized_mask;
-    cv::resize(mask, resized_mask, original_size);
-    cv::threshold(resized_mask, resized_mask, 0.5, 1, cv::THRESH_BINARY);
-    auto M = cv::moments(resized_mask, true);
-    if (M.m00 > original_size.width * original_size.height * 0.01) {
-        lane.center = {float(M.m10 / M.m00), float(M.m01 / M.m00)};
-        lane.detected = true;
-    } else {
-        lane.detected = false;
-    }
-    return lane;
-}
+// // Detecção simples da faixa a partir da máscara
+// LaneInfo detect_lane(const cv::Mat& mask, const cv::Size& original_size) {
+//     LaneInfo lane{};
+//     cv::Mat resized_mask;
+//     cv::resize(mask, resized_mask, original_size);
+//     cv::threshold(resized_mask, resized_mask, 0.5, 1, cv::THRESH_BINARY);
+//     auto M = cv::moments(resized_mask, true);
+//     if (M.m00 > original_size.width * original_size.height * 0.01) {
+//         lane.center = {float(M.m10 / M.m00), float(M.m01 / M.m00)};
+//         lane.detected = true;
+//     } else {
+//         lane.detected = false;
+//     }
+//     return lane;
+// }
 
 void signal_handler(int /*signal*/) {
     running = false;
     std::cout << "[INFO] Encerrando..." << std::endl;
 }
 
+// cv::Mat visualizeOutput(const std::vector<float>& output_data) {
+//     // Cria um cv::Mat de 512x512 com os dados do vetor (CV_32F)
+//     cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
+    
+//     // Clona a matriz para ter uma cópia independente dos dados
+//     cv::Mat outputClone = outputMat.clone();
+    
+//     // Converte os valores para a faixa [0, 255] e muda o tipo para 8 bits (CV_8U)
+//     cv::Mat display;
+//     outputClone.convertTo(display, CV_8U, 255.0);
+    
+//     return display;
+// }
+
 cv::Mat visualizeOutput(const std::vector<float>& output_data) {
     // Cria um cv::Mat de 512x512 com os dados do vetor (CV_32F)
     cv::Mat outputMat(512, 512, CV_32F, const_cast<float*>(output_data.data()));
     
-    // Clona a matriz para ter uma cópia independente dos dados
+    // Clona a matriz para não modificar os dados originais
     cv::Mat outputClone = outputMat.clone();
     
-    // Converte os valores para a faixa [0, 255] e muda o tipo para 8 bits (CV_8U)
+    // Aplica o threshold: pixels com valor > 0.5 se tornam 1, os demais 0
+    cv::Mat binaryOutput;
+    cv::threshold(outputClone, binaryOutput, 0.1, 1, cv::THRESH_BINARY);
+    
+    // Converte a imagem binarizada para 8 bits e escala para [0, 255] para exibição
     cv::Mat display;
-    outputClone.convertTo(display, CV_8U, 255.0);
+    binaryOutput.convertTo(display, CV_8U, 255.0);
     
     return display;
 }
+
 
 
 // ==================================================================
