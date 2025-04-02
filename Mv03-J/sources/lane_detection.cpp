@@ -153,7 +153,7 @@ int main() {
 
         cv::Mat model_vis_04 = visualizeOutput(output, float(0.4));
         cv::Mat model_vis_03  = visualizeOutput(output, float(0.3));
-        cv::Mat model_vis_035  = visualizeOutput(output, float(0.35));
+        cv::Mat model_vis_05  = visualizeOutput(output, float(0.5));
         cv::Mat model_vis_038  = visualizeOutput(output, float(0.38));
         cv::Mat model_vis_07  = visualizeOutput(output, float(0.7));
         
@@ -161,7 +161,7 @@ int main() {
         cv::imshow("Camera", frame);
         cv::imshow("Model Output 0.4", model_vis_04);
         cv::imshow("Model Output 0.3", model_vis_03);
-        cv::imshow("Model Output 0.35", model_vis_035);
+        cv::imshow("Model Output 0.5", model_vis_05);
         cv::imshow("Model Output 0.38", model_vis_038);
         cv::imshow("Model Output 0.7", model_vis_07);
 
