@@ -184,14 +184,14 @@ int main() {
         cv::Mat model_vis_01 = visualizeOutput(output, float(0.1));
         cv::Mat model_vis_03  = visualizeOutput(output, float(0.3));
         cv::Mat model_vis_06  = visualizeOutput(output, float(0.6));
-        cv::Mat model_vis_09  = visualizeOutput(output, float(0.9));
+        cv::Mat model_vis_05  = visualizeOutput(output, float(0.5));
         
 
         cv::imshow("Camera", frame);
         cv::imshow("Model Output 0.1", model_vis_01);
         cv::imshow("Model Output 0.3", model_vis_03);
         cv::imshow("Model Output 0.6", model_vis_06);
-        cv::imshow("Model Output 0.9", model_vis_09);
+        cv::imshow("Model Output 0.5", model_vis_05);
 
         if (cv::waitKey(1) == 'q')
             break;
