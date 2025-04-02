@@ -73,6 +73,32 @@ void destroyTensorRT() {
 //     return resized;
 // }
 
+cv::Mat preprocess_frame(const cv::Mat& frame) {
+    cv::Mat resized;
+    cv::resize(frame, resized, cv::Size(512, 512));
+    resized.convertTo(resized, CV_32F, 1.0 / 255.0);
+    cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
+    
+    // Ajuste os pontos para equilibrar os dois lados
+    std::vector<cv::Point2f> src_points = {
+        {0, 512}, {512, 512}, {0, 0}, {512, 0}
+    };
+    std::vector<cv::Point2f> dst_points = {
+        {128, 512}, {384, 512}, {0, 0}, {512, 0} // Centraliza mais a base
+    };
+    cv::Mat transform = cv::getPerspectiveTransform(src_points, dst_points);
+    cv::Mat warped;
+    cv::warpPerspective(resized, warped, transform, cv::Size(512, 512));
+    
+    // Opcional: exibir a imagem transformada para depuração
+    cv::Mat debug_image;
+    cv::cvtColor(warped, debug_image, cv::COLOR_RGB2BGR);
+    debug_image.convertTo(debug_image, CV_8U, 255.0);
+    cv::imshow("Transformed Image", debug_image);
+    
+    return warped;
+}
+
 // Inferência do modelo TensorRT
 std::vector<float> inferLaneNet(const cv::Mat& frame) {
     cv::Mat input_tensor = preprocess_frame(frame);
@@ -126,31 +152,7 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) 
 }
 
 
-cv::Mat preprocess_frame(const cv::Mat& frame) {
-    cv::Mat resized;
-    cv::resize(frame, resized, cv::Size(512, 512));
-    resized.convertTo(resized, CV_32F, 1.0 / 255.0);
-    cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
-    
-    // Ajuste os pontos para equilibrar os dois lados
-    std::vector<cv::Point2f> src_points = {
-        {0, 512}, {512, 512}, {0, 0}, {512, 0}
-    };
-    std::vector<cv::Point2f> dst_points = {
-        {128, 512}, {384, 512}, {0, 0}, {512, 0} // Centraliza mais a base
-    };
-    cv::Mat transform = cv::getPerspectiveTransform(src_points, dst_points);
-    cv::Mat warped;
-    cv::warpPerspective(resized, warped, transform, cv::Size(512, 512));
-    
-    // Opcional: exibir a imagem transformada para depuração
-    cv::Mat debug_image;
-    cv::cvtColor(warped, debug_image, cv::COLOR_RGB2BGR);
-    debug_image.convertTo(debug_image, CV_8U, 255.0);
-    cv::imshow("Transformed Image", debug_image);
-    
-    return warped;
-}
+
 
 // ==================================================================
 // Função principal simplificada
