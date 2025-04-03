@@ -1,0 +1,70 @@
+Output ao executar o comando "jstest /dev/input/js0" e clicar nos botoes/alavancas do controle:
+Link para testar o gamepad: https://hardwaretester.com/gamepad
+
+SETA PARA CIMA      = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:-32767 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+SETA PARA BAIXO     = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7: 32767 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+SETA PARA FRENTE    = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:-32767  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+SETA PARA TRAS      = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6: 32767  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+
+ALAVANCA DIREITA:
+    Para cima       = Axes:  0:     0  1:     0  2:     0  3:-32767  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+    Para baixo      = Axes:  0:     0  1:     0  2:     0  3: 32767  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+    Para tras       = Axes:  0:     0  1:     0  2:-32767  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+    Para frente     = Axes:  0:     0  1:     0  2: 32767  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+
+R1                  = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:on   8:off  9:off 10:off 11:off 12:off 13:off 14:off
+R2                  = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:on  10:off 11:off 12:off 13:off 14:off
+
+ALAVANCA ESQUERDA:
+    Para cima       = Axes:  0:     0  1:-32767  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+    Para baixo      = Axes:  0:     0  1: 32767  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+    Para tras       = Axes:  0: -9797  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+    Para frente     = Axes:  0: 32767  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+
+L1                  = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:on   7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+L2                  = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5: 32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:on   9:off 10:off 11:off 12:off 13:off 14:off
+
+BUTTON Y            = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:off  4:on   5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+
+BUTTON X            = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:off  2:off  3:on   4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+
+BUTTON B            = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:off  1:on   2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+
+BUTTON A            = Axes:  0:     0  1:     0  2:     0  3:     0  4:-32767  5:-32767  6:     0  7:     0 Buttons:  0:on   1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off 12:off 13:off 14:off
+
+
+
+RESUMO:
+
+    SETAS:
+
+        Para CIMA      = 7 (< 0)
+        Para BAIXO     = 7 (> 0)
+        Para FRENTE    = 6 (< 0)
+        Para TRAS      = 6 (> 0)
+
+    ALAVANCA DIREITA:
+
+        Para CIMA      = 3 (< 0)
+        Para BAIXO     = 3 (> 0)
+        Para TRAS      = 2 (< 0)
+        Para FRENTE    = 2 (> 0)
+
+    ALAVANCA ESQUERDA:
+
+        Para CIMA      = 1 (< 0)
+        Para BAIXO     = 1 (> 0)
+        Para TRAS      = 0 (< 0)
+        Para FRENTE    = 0 (> 0)
+
+    BOTOES:
+
+        R1             = 7 (on)
+        R2             = 9 (on)
+        L1             = 6 (on)
+        L2             = 8 (on)
+
+        Y              = 4 (on)
+        X              = 3 (on)
+        B              = 1 (on)
+        A              = 0 (on)
