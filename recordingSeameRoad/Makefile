@@ -1,7 +1,10 @@
 CC = g++
 
-CFLAGS = -Wall -Wextra -Werror -std=c++17 -O3 -g -Iincludes
-LDFLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -li2c -lpthread
+# Flags de compilação com includes locais + OpenCV
+CFLAGS = -Wall -Wextra -Werror -std=c++17 -O3 -g -Iincludes `pkg-config --cflags opencv4`
+
+# Flags de link com SDL, i2c, pthread e OpenCV
+LDFLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -li2c -lpthread `pkg-config --libs opencv4`
 
 SRC = $(wildcard sources/*.cpp)
 OBJ = $(SRC:.cpp=.o)
@@ -24,3 +27,4 @@ run: $(EXEC)
 re: clean all
 
 .PHONY: all clean run
+
