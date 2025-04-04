@@ -1,0 +1,10 @@
+#rodar no bash
+xhost +local:docker 
+
+t=ultralytics/ultralytics:latest-jetson-jetpack4
+
+sudo docker run -it --ipc=host   --runtime=nvidia   --gpus all   -v /home/$USER:/home/user   --device=/dev/video1:/dev/video1   -e DISPLAY=$DISPLAY   -v /tmp/.X11-unix:/tmp/.X11-unix   $t
+
+
+#rodar no container
+yolo detect predict model=yolo11n.pt source=1 show=true
