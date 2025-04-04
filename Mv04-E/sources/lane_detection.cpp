@@ -136,10 +136,10 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) 
     outputClone = 1.0 / (1.0 + outputClone);
 
     // Exibe mínimo e máximo
-    double min_val, max_val;
-    cv::minMaxLoc(outputClone, &min_val, &max_val);
-    std::cout << "Sigmoid Output range (threshold " << threshold << "): "
-              << min_val << " to " << max_val << std::endl;
+    // double min_val, max_val;
+    // cv::minMaxLoc(outputClone, &min_val, &max_val);
+    // std::cout << "Sigmoid Output range (threshold " << threshold << "): "
+    //           << min_val << " to " << max_val << std::endl;
 
     // Aplica o threshold
     cv::Mat binaryOutput;
