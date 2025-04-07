@@ -9,7 +9,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 train_transforms = A.Compose([
-    A.Resize(height=512, width=512),  # Ensure consistent input size
+    A.Resize(height=512, width=512),  # Ensure consistent input size 
     A.HorizontalFlip(p=0.5),
     A.RandomBrightnessContrast(p=0.3),
     A.RandomGamma(p=0.3),
