@@ -1,3 +1,5 @@
+# Lane Detection Model
+
 ## Results
 
 These images were captured during training with TUSimple and CULane datasets, after a certain amount of epochs.
@@ -6,19 +8,19 @@ These images were captured during training with TUSimple and CULane datasets, af
 
 This image is in epoch 37, nightime.
 
-![](results/epoch37.png)
+![](results/culane.png)
 
 This image was taken whilst testing the model in Jetson. Here you see different masks, with different thresholds of values, after applying the activation function **sigmoid**. After removing the fisheye effect of Jetson's camera, the model produced much better results.
 
-![](results/jetson_model.jpeg)
+![](results/jetson.jpeg)
 
 Next there are a few videos we recorded while testing the model in CARLA. On one side, you see a CARLA's window, with the vehicle from a top spectator view. On the other side, you see an **OpenCV** window from the car's perspective, with our pytorch model's binary mask overlaying the road.
 In intersections, because there is NO lane, we defined that the car should go straight ahead, in the CARLA environment. You can see this behaviour in *carla_setup.py*
 
-Click to see [Town5 Demo](/pytorch/results/town5.mp4), and [Town4 Demo](/pytorch/results/town4.mp4).
+![](results/town4.gif)
+![](results/town5.gif)
 
-
-## Chosen datasets
+## Datasets
 The datasets we are using to train the model are from: [This is an external link to the Datasets used](https://onedrive.live.com/?id=4EF9629CA3CB4B5E%213022&cid=4EF9629CA3CB4B5E&redeem=aHR0cHM6Ly8xZHJ2Lm1zL3UvcyFBbDVMeTZPY1l2bE9sMDQxNHNSb3BGVkgyOTVXP2U9Q2pjbDYy). We used dataset8 and dataset10. However, we were using TUSimple and CULane beforehand, but couldn't get good results on CARLA, so we decided to switch datasets. For testing, we used dataset11 and **CARLA**. We have a testing script for CARLA in *carla_setup.py*.
 
 ## Pytorch Model
