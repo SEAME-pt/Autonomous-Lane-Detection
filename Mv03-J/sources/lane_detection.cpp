@@ -195,28 +195,78 @@ void capture_thread(cv::VideoCapture& cap) {
     }
 }
 
+void displayROI(const cv::Mat& frame, const cv::Mat& binaryOutput) {
+    // Cria uma cópia do frame para não modificá-lo diretamente
+    cv::Mat roiFrame = frame.clone();
+
+    // Parâmetros da ROI (mesmos usados em isTouchingYellowLaneAndPublish)
+    const int carLeftEdge = 151;
+    const int carRightEdge = 361;
+    const int checkHeight = 50;
+    const int roiTop = 512 - checkHeight; // Linha inicial da ROI (462)
+
+    // Converte o frame para BGR se necessário (caso esteja em outro formato)
+    if (roiFrame.channels() == 1) {
+        cv::cvtColor(roiFrame, roiFrame, cv::COLOR_GRAY2BGR);
+    }
+
+    // Desenha um retângulo ao redor da ROI inteira
+    cv::rectangle(
+        roiFrame,
+        cv::Point(0, roiTop),           // Canto superior esquerdo (0, 462)
+        cv::Point(511, 511),            // Canto inferior direito (511, 511)
+        cv::Scalar(0, 255, 0),          // Cor verde em BGR
+        2                               // Espessura da linha
+    );
+
+    // Desenha linhas verticais nas bordas do carro
+    cv::line(
+        roiFrame,
+        cv::Point(carLeftEdge, roiTop), // Início da linha esquerda
+        cv::Point(carLeftEdge, 511),    // Fim da linha esquerda
+        cv::Scalar(0, 0, 255),          // Cor vermelha em BGR
+        2                               // Espessura da linha
+    );
+    cv::line(
+        roiFrame,
+        cv::Point(carRightEdge, roiTop), // Início da linha direita
+        cv::Point(carRightEdge, 511),    // Fim da linha direita
+        cv::Scalar(0, 0, 255),           // Cor vermelha em BGR
+        2                                // Espessura da linha
+    );
+
+    // Opcional: Destaca pixels detectados como faixa na ROI
+    for (int row = roiTop; row < 512; ++row) {
+        if (binaryOutput.at<uchar>(row, carLeftEdge) == 255) {
+            cv::circle(roiFrame, cv::Point(carLeftEdge, row), 3, cv::Scalar(255, 0, 0), -1); // Azul
+        }
+        if (binaryOutput.at<uchar>(row, carRightEdge) == 255) {
+            cv::circle(roiFrame, cv::Point(carRightEdge, row), 3, cv::Scalar(255, 0, 0), -1); // Azul
+        }
+    }
+
+    // Exibe a ROI em uma janela separada
+    cv::imshow("ROI", roiFrame);
+}
+
 bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
     const int carLeftEdge = 151;
     const int carRightEdge = 361;
-    const int checkHeight = 100;
+    const int checkHeight = 200;
 
     for (int row = 512 - checkHeight; row < 512; ++row) {
         if (binaryOutput.at<uchar>(row, carLeftEdge) == 255) {
+			// std::cout << "[DEBUG] LEFT lane touched. Publishing 76!" << std::endl;
             std::cout << "[DEBUG] RIGHT lane touched. Publishing 82!" << std::endl;
             publishLaneTouch(82);
             return true;
         }
         if (binaryOutput.at<uchar>(row, carRightEdge) == 255) {
+			// std::cout << "[DEBUG] RIGHT lane touched. Publishing 82!" << std::endl;
             std::cout << "[DEBUG] LEFT lane touched. Publishing 76!" << std::endl;
             publishLaneTouch(76);
             return true;
         }
-		// Printar que o carro não está tocando a faixa
-		// if (binaryOutput.at<uchar>(row, carLeftEdge) == 0 && binaryOutput.at<uchar>(row, carRightEdge) == 0) {
-		// 	std::cout << "[DEBUG] Any lane touched. Publishing 0!" << std::endl;
-		// 	publishLaneTouch(0);
-		// 	return false;
-		// }
     }
 	std::cout << "[DEBUG] Any lane touched. Publishing 0!" << std::endl;
 	publishLaneTouch(0);
@@ -255,6 +305,7 @@ int main() {
         auto output = inferLaneNet(frame_copy);
         cv::Mat model_vis_07 = visualizeOutput(output, 0.7);
 		isTouchingYellowLaneAndPublish(model_vis_07);
+		displayROI(frame_copy, model_vis_07);
 
         //cv::imshow("Camera", frame_copy);
         cv::imshow("Model Output 0.7", model_vis_07);
