@@ -24,6 +24,21 @@ std::atomic<bool> running(true);
 #define MQTT_TOPIC "jetracer/lane_touch"
 
 struct mosquitto *mosq;
+std::thread mqtt_thread;
+
+void mqtt_loop_thread() {
+    while (running) {
+        int rc = mosquitto_loop(mosq, 1000, 1); // Timeout de 1000ms
+        if (rc != MOSQ_ERR_SUCCESS) {
+            std::cerr << "[MQTT] Erro no loop: " << mosquitto_strerror(rc) << std::endl;
+            // Tenta reconectar
+            if (mosquitto_reconnect(mosq) == MOSQ_ERR_SUCCESS) {
+                std::cout << "[MQTT] Reconectado ao broker!" << std::endl;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
 
 void initMQTT() {
     mosquitto_lib_init();
@@ -33,6 +48,7 @@ void initMQTT() {
         throw std::runtime_error("Erro ao conectar ao broker MQTT");
     }
     std::cout << "[MQTT] Conectado ao broker MQTT!" << std::endl;
+    mqtt_thread = std::thread(mqtt_loop_thread); // Inicia a thread do loop
 }
 
 void publishLaneTouch(int value) {
@@ -209,6 +225,7 @@ bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
 int main() {
     signal(SIGINT, signal_handler);
     initializeTensorRT();
+	initMQTT();
 
     std::string pipeline = "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, format=NV12, framerate=60/1 ! nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
 
@@ -221,7 +238,6 @@ int main() {
     std::thread cam_thread(capture_thread, std::ref(cap));
 	jetracer.start();
 
-	initMQTT();
 
     while (running) {
         cv::Mat frame_copy;
@@ -247,9 +263,15 @@ int main() {
 
     running = false;
     cam_thread.join();
+	mqtt_thread.join();
     destroyTensorRT();
 	jetracer.stop();
     cap.release();
     cv::destroyAllWindows();
+
+	mosquitto_disconnect(mosq);
+    mosquitto_destroy(mosq);
+    mosquitto_lib_cleanup();
+
     return 0;
 }
