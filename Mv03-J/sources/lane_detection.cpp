@@ -47,7 +47,7 @@ std::vector<char> loadTRTModel(const std::string& modelPath) {
 // Inicializa TensorRT
 void initializeTensorRT() {
     initLibNvInferPlugins(&gLogger, "");
-    auto modelData = loadTRTModel("lanenet.trt");
+    auto modelData = loadTRTModel("models/lanenet_fp16.trt");
     runtime = createInferRuntime(gLogger);
     engine = runtime->deserializeCudaEngine(modelData.data(), modelData.size());
     context = engine->createExecutionContext();
@@ -155,53 +155,110 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) 
 
 
 // ==================================================================
-// Função principal simplificada
-// ==================================================================
+
+#include <thread>
+#include <mutex>
+
+std::mutex frame_mutex;
+cv::Mat latest_frame;
+
+// Thread só para capturar
+void capture_thread(cv::VideoCapture& cap) {
+    while (running) {
+        cv::Mat frame;
+        cap.grab();
+        cap.read(frame);
+        if (!frame.empty()) {
+            std::lock_guard<std::mutex> lock(frame_mutex);
+            latest_frame = frame.clone();
+        }
+    }
+}
+
+// No main():
 int main() {
     signal(SIGINT, signal_handler);
     initializeTensorRT();
 
-  
-    std::string pipeline = 
-        "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, format=NV12, framerate=30/1 ! "
-        "nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
-    
+    std::string pipeline = "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, format=NV12, framerate=60/1 ! nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
     cv::VideoCapture cap(pipeline, cv::CAP_GSTREAMER);
     if (!cap.isOpened()) {
         std::cerr << "Erro ao abrir a câmera!" << std::endl;
         return -1;
     }
 
+    std::thread cam_thread(capture_thread, std::ref(cap));
+	jetracer.start();
 
     while (running) {
-        cv::Mat frame;
-        if (!cap.read(frame) || frame.empty())
-            break;
+        cv::Mat frame_copy;
+        {
+            std::lock_guard<std::mutex> lock(frame_mutex);
+            if (!latest_frame.empty())
+                frame_copy = latest_frame.clone();
+        }
 
-        auto output = inferLaneNet(frame);
+        if (frame_copy.empty())
+            continue;
 
-        cv::Mat model_vis_04 = visualizeOutput(output, float(0.4));
-        cv::Mat model_vis_03  = visualizeOutput(output, float(0.3));
-        cv::Mat model_vis_05  = visualizeOutput(output, float(0.5));
-        cv::Mat model_vis_038  = visualizeOutput(output, float(0.38));
-        cv::Mat model_vis_07  = visualizeOutput(output, float(0.7));
-        
+        auto output = inferLaneNet(frame_copy);
+        cv::Mat model_vis_05 = visualizeOutput(output, 0.5);
 
-        cv::imshow("Camera", frame);
-        cv::imshow("Model Output 0.4", model_vis_04);
-        cv::imshow("Model Output 0.3", model_vis_03);
+        cv::imshow("Camera", frame_copy);
         cv::imshow("Model Output 0.5", model_vis_05);
-        cv::imshow("Model Output 0.38", model_vis_038);
-        cv::imshow("Model Output 0.7", model_vis_07);
-        // preprocess_frame_distorcion(frame);
 
         if (cv::waitKey(1) == 'q')
             break;
     }
 
+    running = false;
+    cam_thread.join();
     destroyTensorRT();
-    // jetracer.stop();
+	jetracer.stop();
     cap.release();
     cv::destroyAllWindows();
     return 0;
 }
+
+
+// Função principal simplificada
+// ==================================================================
+//int main() {
+//    signal(SIGINT, signal_handler);
+//    initializeTensorRT();
+	//std::string pipeline = "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, format=NV12, framerate=30/1 ! nvvidconv flip-method=2 ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
+
+  
+//std::string pipeline =  "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, format=NV12, framerate=60/1 ! " "nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
+    
+//    cv::VideoCapture cap(pipeline, cv::CAP_GSTREAMER);
+//    if (!cap.isOpened()) {
+//        std::cerr << "Erro ao abrir a câmera!" << std::endl;
+//        return -1;
+//    }
+
+
+//    while (running) {
+//    cv::Mat frame;
+//    cap.grab(); // descarta frame velho
+//    if (!cap.read(frame) || frame.empty())
+//        break;
+
+//   auto output = inferLaneNet(frame);
+
+//    cv::Mat model_vis_05  = visualizeOutput(output, float(0.5));
+        
+//    cv::imshow("Camera", frame);
+//    cv::imshow("Model Output 0.5", model_vis_05);
+
+//    if (cv::waitKey(10) == 'q')
+//        break;
+//}
+
+
+//    destroyTensorRT();
+    // jetracer.stop();
+//    cap.release();
+//    cv::destroyAllWindows();
+//    return 0;
+//}
