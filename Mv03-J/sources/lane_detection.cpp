@@ -10,8 +10,12 @@
 #include <memory>
 #include "NvInferPlugin.h"
 #include <mosquitto.h>
+#include <thread>
+#include <mutex>
 
 using namespace nvinfer1;
+std::mutex frame_mutex;
+cv::Mat latest_frame;
 
 #define LOCAL_BROKER "10.21.221.67"
 #define LOCAL_PORT 1883
@@ -74,7 +78,7 @@ std::vector<char> loadTRTModel(const std::string& modelPath) {
 // Inicializa TensorRT
 void initializeTensorRT() {
     initLibNvInferPlugins(&gLogger, "");
-    auto modelData = loadTRTModel("models/lanenet_fp16.trt");
+    auto modelData = loadTRTModel("models/lanenet.trt");
     runtime = createInferRuntime(gLogger);
     engine = runtime->deserializeCudaEngine(modelData.data(), modelData.size());
     context = engine->createExecutionContext();
@@ -90,15 +94,6 @@ void destroyTensorRT() {
     delete engine;
     delete runtime;
 }
-
-// // Pré-processa imagem
-// cv::Mat preprocess_frame(const cv::Mat& frame) {
-//     cv::Mat resized;
-//     cv::resize(frame, resized, cv::Size(512, 512));
-//     resized.convertTo(resized, CV_32F, 1.0 / 255.0);
-//     cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
-//     return resized;
-// }
 
 cv::Mat preprocess_frame(const cv::Mat& frame) {
     cv::Mat resized;
@@ -162,12 +157,6 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) 
     cv::exp(-outputClone, outputClone);
     outputClone = 1.0 / (1.0 + outputClone);
 
-    // Exibe mínimo e máximo
-    double min_val, max_val;
-    cv::minMaxLoc(outputClone, &min_val, &max_val);
-    std::cout << "Sigmoid Output range (threshold " << threshold << "): "
-              << min_val << " to " << max_val << std::endl;
-
     // Aplica o threshold
     cv::Mat binaryOutput;
     cv::threshold(outputClone, binaryOutput, threshold, 1, cv::THRESH_BINARY);
@@ -177,17 +166,6 @@ cv::Mat visualizeOutput(const std::vector<float>& output_data, float threshold) 
     binaryOutput.convertTo(display, CV_8U, 255.0);
     return display;
 }
-
-
-
-
-// ==================================================================
-
-#include <thread>
-#include <mutex>
-
-std::mutex frame_mutex;
-cv::Mat latest_frame;
 
 // Thread só para capturar
 void capture_thread(cv::VideoCapture& cap) {
@@ -256,11 +234,11 @@ int main() {
             continue;
 
         auto output = inferLaneNet(frame_copy);
-        cv::Mat model_vis_05 = visualizeOutput(output, 0.5);
-		isTouchingYellowLaneAndPublish(model_vis_05);
+        cv::Mat model_vis_07 = visualizeOutput(output, 0.7);
+		isTouchingYellowLaneAndPublish(model_vis_07);
 
-        cv::imshow("Camera", frame_copy);
-        cv::imshow("Model Output 0.5", model_vis_05);
+        //cv::imshow("Camera", frame_copy);
+        cv::imshow("Model Output 0.7", model_vis_07);
 
         if (cv::waitKey(1) == 'q')
             break;
@@ -274,46 +252,3 @@ int main() {
     cv::destroyAllWindows();
     return 0;
 }
-
-
-// Função principal simplificada
-// ==================================================================
-//int main() {
-//    signal(SIGINT, signal_handler);
-//    initializeTensorRT();
-	//std::string pipeline = "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, format=NV12, framerate=30/1 ! nvvidconv flip-method=2 ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
-
-
-//std::string pipeline =  "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, format=NV12, framerate=60/1 ! " "nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
-
-//    cv::VideoCapture cap(pipeline, cv::CAP_GSTREAMER);
-//    if (!cap.isOpened()) {
-//        std::cerr << "Erro ao abrir a câmera!" << std::endl;
-//        return -1;
-//    }
-
-
-//    while (running) {
-//    cv::Mat frame;
-//    cap.grab(); // descarta frame velho
-//    if (!cap.read(frame) || frame.empty())
-//        break;
-
-//   auto output = inferLaneNet(frame);
-
-//    cv::Mat model_vis_05  = visualizeOutput(output, float(0.5));
-
-//    cv::imshow("Camera", frame);
-//    cv::imshow("Model Output 0.5", model_vis_05);
-
-//    if (cv::waitKey(10) == 'q')
-//        break;
-//}
-
-
-//    destroyTensorRT();
-    // jetracer.stop();
-//    cap.release();
-//    cv::destroyAllWindows();
-//    return 0;
-//}

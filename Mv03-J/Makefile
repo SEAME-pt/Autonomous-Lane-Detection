@@ -12,7 +12,8 @@ CFLAGS = -Wall -Wextra -Werror -std=c++17 -O3 -g \
 LDFLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -li2c -lpthread \
           $(shell pkg-config --libs opencv4) \
           -L/usr/lib/aarch64-linux-gnu -lnvinfer -lnvinfer_plugin \
-          -L/usr/local/cuda/lib64 -lcudart -Wl,-rpath,/usr/local/cuda/lib64
+          -L/usr/local/cuda/lib64 -lcudart -Wl,-rpath,/usr/local/cuda/lib64 \
+          -lmosquitto
 
 JETRACER_SERVER_SRC = sources/jetracer_server.cpp sources/jetracer.cpp
 JETRACER_SERVER_OBJ = $(JETRACER_SERVER_SRC:.cpp=.o)
