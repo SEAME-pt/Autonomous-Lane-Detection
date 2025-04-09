@@ -198,7 +198,7 @@ void capture_thread(cv::VideoCapture& cap) {
 bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
     const int carLeftEdge = 151;
     const int carRightEdge = 361;
-    const int checkHeight = 50;
+    const int checkHeight = 100;
 
     for (int row = 512 - checkHeight; row < 512; ++row) {
         if (binaryOutput.at<uchar>(row, carLeftEdge) == 255) {
@@ -212,12 +212,14 @@ bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
             return true;
         }
 		// Printar que o carro não está tocando a faixa
-		if (binaryOutput.at<uchar>(row, carLeftEdge) == 0 && binaryOutput.at<uchar>(row, carRightEdge) == 0) {
-			std::cout << "[DEBUG] Any lane touched. Publishing 0!" << std::endl;
-			publishLaneTouch(0);
-			return false;
-		}
+		// if (binaryOutput.at<uchar>(row, carLeftEdge) == 0 && binaryOutput.at<uchar>(row, carRightEdge) == 0) {
+		// 	std::cout << "[DEBUG] Any lane touched. Publishing 0!" << std::endl;
+		// 	publishLaneTouch(0);
+		// 	return false;
+		// }
     }
+	std::cout << "[DEBUG] Any lane touched. Publishing 0!" << std::endl;
+	publishLaneTouch(0);
     return false;
 }
 
