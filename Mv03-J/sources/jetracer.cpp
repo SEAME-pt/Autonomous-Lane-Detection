@@ -101,20 +101,21 @@ void JetCar::init_motors() {
 }
 
 void JetCar::set_steering(int angle) {
+
     angle = std::clamp(angle, -MAX_ANGLE_, MAX_ANGLE_);
 
-	std::cout << "[DEBUG] set_steering ANGLE: " << angle << std::endl;
+	// std::cout << "[DEBUG] set_steering ANGLE: " << angle << std::endl;
 
     int pwm = 0;
     if (angle < 0) {
         pwm = SERVO_CENTER_PWM_ + (angle / static_cast<float>(MAX_ANGLE_)) * (SERVO_CENTER_PWM_ - SERVO_LEFT_PWM_);
-	std::cout << "[DEBUG] set_steering ANGLE LEFT | PWM: " << angle << "|" << pwm << std::endl;
+	// std::cout << "[DEBUG] set_steering ANGLE LEFT | PWM: " << angle << "|" << pwm << std::endl;
     } else if (angle > 0) {
         pwm = SERVO_CENTER_PWM_ + (angle / static_cast<float>(MAX_ANGLE_)) * (SERVO_RIGHT_PWM_ - SERVO_CENTER_PWM_);
-	std::cout << "[DEBUG] set_steering ANGLE RIGHT | PWM: " << angle << "|" << pwm << std::endl;
+	// std::cout << "[DEBUG] set_steering ANGLE RIGHT | PWM: " << angle << "|" << pwm << std::endl;
     } else {
         pwm = SERVO_CENTER_PWM_;
-	std::cout << "[DEBUG] set_steering ANGLE CENTER | PWM: " << angle << "|" << pwm << std::endl;
+	// std::cout << "[DEBUG] set_steering ANGLE CENTER | PWM: " << angle << "|" << pwm << std::endl;
     }
 
     set_servo_pwm(0, 0, pwm);
@@ -146,7 +147,7 @@ void JetCar::set_speed(float speed) {
     speed = std::clamp(speed, -100.0f, 100.0f);
     int pwm_value = static_cast<int>(std::abs(speed) / 100.0f * 4095);
 
-    
+
 
     if (speed > 0) {
         set_motor_pwm(0, pwm_value);

@@ -16,6 +16,8 @@
 using namespace nvinfer1;
 std::mutex frame_mutex;
 cv::Mat latest_frame;
+JetCar jetracer(0x40, 0x60);
+std::atomic<bool> running(true);
 
 #define LOCAL_BROKER "10.21.221.67"
 #define LOCAL_PORT 1883
@@ -42,9 +44,6 @@ void publishLaneTouch(int value) {
         std::cout << "[MQTT] Publicado: " << message << std::endl;
     }
 }
-
-JetCar jetracer(0x40, 0x60);
-std::atomic<bool> running(true);
 
 // Logger simples para TensorRT
 class Logger : public ILogger {
@@ -197,11 +196,11 @@ bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
             return true;
         }
 		// Printar que o carro não está tocando a faixa
-		if (binaryOutput.at<uchar>(row, carLeftEdge) == 0 && binaryOutput.at<uchar>(row, carRightEdge) == 0) {
-			std::cout << "[DEBUG] Carro NÃO tocando a faixa!" << std::endl;
-			publishLaneTouch(0);
-			return false;
-		}
+		// if (binaryOutput.at<uchar>(row, carLeftEdge) == 0 && binaryOutput.at<uchar>(row, carRightEdge) == 0) {
+		// 	std::cout << "[DEBUG] Carro NÃO tocando a faixa!" << std::endl;
+		// 	publishLaneTouch(0);
+		// 	return false;
+		// }
     }
     return false;
 }
@@ -221,6 +220,8 @@ int main() {
 
     std::thread cam_thread(capture_thread, std::ref(cap));
 	jetracer.start();
+
+	initMQTT();
 
     while (running) {
         cv::Mat frame_copy;
