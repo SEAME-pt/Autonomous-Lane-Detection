@@ -161,20 +161,38 @@ cv::Mat preprocess_frame(const cv::Mat& frame, cv::Mat& debug_image) {
 }
 
 // Inferência do modelo TensorRT
-std::vector<float> inferLaneNet(const cv::Mat& frame) {
-    cv::Mat input_tensor = preprocess_frame(frame);
+// std::vector<float> inferLaneNet(const cv::Mat& frame) {
+//     cv::Mat input_tensor = preprocess_frame(frame);
+//     float chw_input[INPUT_SIZE]; // [3 * 512 * 512]
+//     int idx = 0;
+// for (int c = 0; c < 3; ++c) {
+//     for (int i = 0; i < 512; ++i) {
+//         for (int j = 0; j < 512; ++j) {
+//             chw_input[idx++] = input_tensor.at<cv::Vec3f>(i, j)[c];
+//         }
+//     }
+// }
+// cudaMemcpy(buffers[0], chw_input, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+
+//     //cudaMemcpy(buffers[0], input_tensor.data, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+//     context->executeV2(buffers);
+//     std::vector<float> output_data(OUTPUT_SIZE);
+//     cudaMemcpy(output_data.data(), buffers[1], OUTPUT_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
+//     return output_data;
+// }
+
+std::vector<float> inferLaneNet(const cv::Mat& frame, cv::Mat& debug_image) {
+    cv::Mat input_tensor = preprocess_frame(frame, debug_image); // Passa debug_image
     float chw_input[INPUT_SIZE]; // [3 * 512 * 512]
     int idx = 0;
-for (int c = 0; c < 3; ++c) {
-    for (int i = 0; i < 512; ++i) {
-        for (int j = 0; j < 512; ++j) {
-            chw_input[idx++] = input_tensor.at<cv::Vec3f>(i, j)[c];
+    for (int c = 0; c < 3; ++c) {
+        for (int i = 0; i < 512; ++i) {
+            for (int j = 0; j < 512; ++j) {
+                chw_input[idx++] = input_tensor.at<cv::Vec3f>(i, j)[c];
+            }
         }
     }
-}
-cudaMemcpy(buffers[0], chw_input, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
-
-    //cudaMemcpy(buffers[0], input_tensor.data, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(buffers[0], chw_input, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
     context->executeV2(buffers);
     std::vector<float> output_data(OUTPUT_SIZE);
     cudaMemcpy(output_data.data(), buffers[1], OUTPUT_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
@@ -327,7 +345,7 @@ int main() {
             continue;
 
         cv::Mat debug_image; // Variável para armazenar a debug_image
-        auto output = inferLaneNet(preprocess_frame(frame_copy, debug_image)); // Passa debug_image por referência
+        auto output = inferLaneNet(frame_copy, debug_image); // Passa debug_image para inferLaneNet
         cv::Mat model_vis_07 = visualizeOutput(output, 0.7);
         isTouchingYellowLaneAndPublish(model_vis_07);
         displayROI(debug_image, model_vis_07); // Usa debug_image para exibir a ROI
