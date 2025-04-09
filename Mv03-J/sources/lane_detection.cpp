@@ -153,6 +153,7 @@ cv::Mat preprocess_frame(const cv::Mat& frame, cv::Mat& debug_image) {
     cv::Mat warped;
     cv::warpPerspective(resized, warped, transform, cv::Size(512, 512));
 
+    // Gera a debug_image para depuração
     cv::cvtColor(warped, debug_image, cv::COLOR_RGB2BGR);
     debug_image.convertTo(debug_image, CV_8U, 255.0);
 
@@ -300,7 +301,7 @@ bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
 int main() {
     signal(SIGINT, signal_handler);
     initializeTensorRT();
-	initMQTT();
+    initMQTT();
 
     std::string pipeline = "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=512, height=512, format=NV12, framerate=60/1 ! nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
 
@@ -311,8 +312,8 @@ int main() {
     }
 
     std::thread cam_thread(capture_thread, std::ref(cap));
-	jetracer.start();
-
+    std::thread mqtt_thread(mqtt_loop_thread);
+    jetracer.start();
 
     while (running) {
         cv::Mat frame_copy;
@@ -325,12 +326,12 @@ int main() {
         if (frame_copy.empty())
             continue;
 
-        auto output = inferLaneNet(frame_copy);
+        cv::Mat debug_image; // Variável para armazenar a debug_image
+        auto output = inferLaneNet(preprocess_frame(frame_copy, debug_image)); // Passa debug_image por referência
         cv::Mat model_vis_07 = visualizeOutput(output, 0.7);
-		isTouchingYellowLaneAndPublish(model_vis_07);
-		displayROI(debug_image, model_vis_07);
+        isTouchingYellowLaneAndPublish(model_vis_07);
+        displayROI(debug_image, model_vis_07); // Usa debug_image para exibir a ROI
 
-        //cv::imshow("Camera", frame_copy);
         cv::imshow("Model Output 0.7", model_vis_07);
 
         if (cv::waitKey(1) == 'q')
@@ -339,13 +340,13 @@ int main() {
 
     running = false;
     cam_thread.join();
-	mqtt_thread.join();
+    mqtt_thread.join();
     destroyTensorRT();
-	jetracer.stop();
+    jetracer.stop();
     cap.release();
     cv::destroyAllWindows();
 
-	mosquitto_disconnect(mosq);
+    mosquitto_disconnect(mosq);
     mosquitto_destroy(mosq);
     mosquitto_lib_cleanup();
 
