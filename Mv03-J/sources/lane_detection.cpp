@@ -110,7 +110,33 @@ void destroyTensorRT() {
     delete runtime;
 }
 
-cv::Mat preprocess_frame(const cv::Mat& frame) {
+// cv::Mat preprocess_frame(const cv::Mat& frame) {
+//     cv::Mat resized;
+//     cv::resize(frame, resized, cv::Size(512, 512));
+//     resized.convertTo(resized, CV_32F, 1.0 / 255.0);
+//     cv::cvtColor(resized, resized, cv::COLOR_BGR2RGB);
+
+//     // Ajuste os pontos para equilibrar os dois lados
+//     std::vector<cv::Point2f> src_points = {
+//         {0, 512}, {512, 512}, {0, 0}, {512, 0}
+//     };
+//     std::vector<cv::Point2f> dst_points = {
+//         {128, 512}, {384, 512}, {0, 0}, {512, 0} // Centraliza mais a base
+//     };
+//     cv::Mat transform = cv::getPerspectiveTransform(src_points, dst_points);
+//     cv::Mat warped;
+//     cv::warpPerspective(resized, warped, transform, cv::Size(512, 512));
+
+//     // Opcional: exibir a imagem transformada para depuração
+//     cv::Mat debug_image;
+//     cv::cvtColor(warped, debug_image, cv::COLOR_RGB2BGR);
+//     debug_image.convertTo(debug_image, CV_8U, 255.0);
+//     cv::imshow("Transformed Image", debug_image);
+
+//     return warped;
+// }
+
+cv::Mat preprocess_frame(const cv::Mat& frame, cv::Mat& debug_image) {
     cv::Mat resized;
     cv::resize(frame, resized, cv::Size(512, 512));
     resized.convertTo(resized, CV_32F, 1.0 / 255.0);
@@ -127,11 +153,8 @@ cv::Mat preprocess_frame(const cv::Mat& frame) {
     cv::Mat warped;
     cv::warpPerspective(resized, warped, transform, cv::Size(512, 512));
 
-    // Opcional: exibir a imagem transformada para depuração
-    cv::Mat debug_image;
     cv::cvtColor(warped, debug_image, cv::COLOR_RGB2BGR);
     debug_image.convertTo(debug_image, CV_8U, 255.0);
-    cv::imshow("Transformed Image", debug_image);
 
     return warped;
 }
@@ -195,9 +218,9 @@ void capture_thread(cv::VideoCapture& cap) {
     }
 }
 
-void displayROI(const cv::Mat& frame, const cv::Mat& binaryOutput) {
-    // Cria uma cópia do frame para não modificá-lo diretamente
-    cv::Mat roiFrame = frame.clone();
+void displayROI(const cv::Mat& debug_image, const cv::Mat& binaryOutput) {
+    // Cria uma cópia da debug_image para desenhar a ROI
+    cv::Mat roiFrame = debug_image.clone();
 
     // Parâmetros da ROI (mesmos usados em isTouchingYellowLaneAndPublish)
     const int carLeftEdge = 151;
@@ -205,7 +228,7 @@ void displayROI(const cv::Mat& frame, const cv::Mat& binaryOutput) {
     const int checkHeight = 50;
     const int roiTop = 512 - checkHeight; // Linha inicial da ROI (462)
 
-    // Converte o frame para BGR se necessário (caso esteja em outro formato)
+    // Garante que roiFrame está em BGR (debug_image já deve estar, mas verificamos)
     if (roiFrame.channels() == 1) {
         cv::cvtColor(roiFrame, roiFrame, cv::COLOR_GRAY2BGR);
     }
@@ -235,7 +258,7 @@ void displayROI(const cv::Mat& frame, const cv::Mat& binaryOutput) {
         2                                // Espessura da linha
     );
 
-    // Opcional: Destaca pixels detectados como faixa na ROI
+    // Destaca pixels detectados como faixa na ROI
     for (int row = roiTop; row < 512; ++row) {
         if (binaryOutput.at<uchar>(row, carLeftEdge) == 255) {
             cv::circle(roiFrame, cv::Point(carLeftEdge, row), 3, cv::Scalar(255, 0, 0), -1); // Azul
@@ -305,7 +328,7 @@ int main() {
         auto output = inferLaneNet(frame_copy);
         cv::Mat model_vis_07 = visualizeOutput(output, 0.7);
 		isTouchingYellowLaneAndPublish(model_vis_07);
-		displayROI(frame_copy, model_vis_07);
+		displayROI(debug_image, model_vis_07);
 
         //cv::imshow("Camera", frame_copy);
         cv::imshow("Model Output 0.7", model_vis_07);
