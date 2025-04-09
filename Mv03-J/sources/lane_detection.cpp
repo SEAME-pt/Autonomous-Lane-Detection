@@ -202,13 +202,13 @@ bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
 
     for (int row = 512 - checkHeight; row < 512; ++row) {
         if (binaryOutput.at<uchar>(row, carLeftEdge) == 255) {
-            std::cout << "[DEBUG] LEFT lane touched. Publishing 76!" << std::endl;
-            publishLaneTouch(76);
+            std::cout << "[DEBUG] RIGHT lane touched. Publishing 82!" << std::endl;
+            publishLaneTouch(82);
             return true;
         }
         if (binaryOutput.at<uchar>(row, carRightEdge) == 255) {
-            std::cout << "[DEBUG] RIGHT lane touched. Publishing 82!" << std::endl;
-            publishLaneTouch(82);
+            std::cout << "[DEBUG] LEFT lane touched. Publishing 76!" << std::endl;
+            publishLaneTouch(76);
             return true;
         }
 		// Printar que o carro não está tocando a faixa
