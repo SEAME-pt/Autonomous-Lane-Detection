@@ -11,7 +11,7 @@ from torchmetrics import JaccardIndex
 
 device = torch.device("cuda")
 model = LaneNet().to(device)
-model.load_state_dict(torch.load('../models/model_4.pth', map_location=device))
+model.load_state_dict(torch.load('../models/retrain.pth', map_location=device))
 model.eval()
 
 image_paths = []
