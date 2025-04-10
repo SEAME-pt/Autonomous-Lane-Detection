@@ -206,8 +206,8 @@ void JetCar::process_joystick() {
         int right_joystick_x = SDL_JoystickGetAxis(joystick, 2);
         set_speed(-left_joystick_y / 32767.0f * 100);
         int joystickAngle = right_joystick_x / 32767.0f * MAX_ANGLE_;
-        currentJoystickAngle = joystickAngle; // Atualiza o ângulo do joystick
-        smooth_steering(joystickAngle, 10);   // Define a direção base
+        currentJoystickAngle_ = joystickAngle;
+        smooth_steering(joystickAngle, 10);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }

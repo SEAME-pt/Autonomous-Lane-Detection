@@ -45,6 +45,7 @@ public:
     bool circle_mode_ = false;
 
 	static constexpr int MAX_ANGLE_ = 180;
+	int getCurrentJoystickAngle() const { return currentJoystickAngle_.load(); }
 
 private:
     void init_servo();
@@ -65,6 +66,7 @@ private:
     I2CDevice motor_device_;
     int current_angle_ = 0;
     float current_speed_ = 0.0f;
+	std::atomic<int> currentJoystickAngle_ {0};
 };
 
 #endif // JETRACER_HPP

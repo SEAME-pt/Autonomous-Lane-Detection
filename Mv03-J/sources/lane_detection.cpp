@@ -19,7 +19,6 @@ std::mutex frame_mutex;
 cv::Mat latest_frame;
 JetCar jetracer(0x40, 0x60);
 std::atomic<bool> running(true);
-std::atomic<int> currentJoystickAngle(0);
 
 #define LOCAL_BROKER "10.21.221.67"
 #define LOCAL_PORT 1883
@@ -300,6 +299,29 @@ void displayROI(const cv::Mat& debug_image, const cv::Mat& binaryOutput) {
     cv::imshow("ROI - Model Output", roiFrameBW);   // ROI na model_vis_07
 }
 
+void assistSteering(JetCar& jetracer, int laneTouchStatus, int joystickAngle) {
+    const int correctionAngle = 30;
+    const int increment = 10;
+
+    int targetAngle = joystickAngle;
+
+    switch (laneTouchStatus) {
+        case 76:
+            targetAngle = std::min(JetCar::MAX_ANGLE_, joystickAngle + correctionAngle);
+            std::cout << "[ASSIST] Correcting RIGHT due to left lane touch. Target: " << targetAngle << std::endl;
+            break;
+        case 82:
+            targetAngle = std::max(-JetCar::MAX_ANGLE_, joystickAngle - correctionAngle);
+            std::cout << "[ASSIST] Correcting LEFT due to right lane touch. Target: " << targetAngle << std::endl;
+            break;
+        case 0:
+            std::cout << "[ASSIST] No correction needed. Using joystick: " << joystickAngle << std::endl;
+            break;
+    }
+
+    jetracer.smooth_steering(targetAngle, increment);
+}
+
 int isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput, JetCar& jetracer) {
     const int checkHeight = 100;
     const int roiTop = 512 - checkHeight;
@@ -313,46 +335,22 @@ int isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput, JetCar& jetracer
             if (binaryOutput.at<uchar>(row, col) == 255) {
                 std::cout << "[DEBUG] LEFT (76) lane touched. Col.: " << col << "!" << std::endl;
                 publishLaneTouch(76);
-                return 76; // Faixa esquerda tocada
+                return 76;
             }
         }
         for (int col = rightWheelMin; col <= rightWheelMax; ++col) {
             if (binaryOutput.at<uchar>(row, col) == 255) {
                 std::cout << "[DEBUG] RIGHT (82) lane touched. Col.: " << col << "!" << std::endl;
                 publishLaneTouch(82);
-                return 82; // Faixa direita tocada
+                return 82;
             }
         }
     }
     std::cout << "[DEBUG] Any lane touched. Publishing 0!" << std::endl;
     publishLaneTouch(0);
-    return 0; // Nenhuma faixa tocada
+    return 0;
 }
 
-void assistSteering(JetCar& jetracer, int laneTouchStatus, int joystickAngle) {
-    const int correctionAngle = 30; // Ângulo de correção
-    const int increment = 10;       // Incremento para suavidade
-
-    int targetAngle = joystickAngle; // Direção base do joystick
-
-    switch (laneTouchStatus) {
-        case 76: // Faixa esquerda tocada -> virar à direita
-            targetAngle = std::min(jetracer.MAX_ANGLE_, joystickAngle + correctionAngle);
-            std::cout << "[ASSIST] Correcting RIGHT due to left lane touch. Target: " << targetAngle << std::endl;
-            break;
-        case 82: // Faixa direita tocada -> virar à esquerda
-            targetAngle = std::max(-jetracer.MAX_ANGLE_, joystickAngle - correctionAngle);
-            std::cout << "[ASSIST] Correcting LEFT due to right lane touch. Target: " << targetAngle << std::endl;
-            break;
-        case 0: // Nenhuma faixa tocada -> seguir joystick
-            std::cout << "[ASSIST] No correction needed. Using joystick: " << joystickAngle << std::endl;
-            break;
-    }
-
-    jetracer.smooth_steering(targetAngle, increment);
-}
-
-// No main():
 int main() {
     signal(SIGINT, signal_handler);
     initializeTensorRT();
@@ -385,7 +383,7 @@ int main() {
         auto output = inferLaneNet(frame_copy, debug_image);
         cv::Mat model_vis_07 = visualizeOutput(output, 0.7);
         int laneTouchStatus = isTouchingYellowLaneAndPublish(model_vis_07, jetracer);
-        assistSteering(jetracer, laneTouchStatus, currentJoystickAngle.load());
+        assistSteering(jetracer, laneTouchStatus, jetracer.getCurrentJoystickAngle()); // Usando o método
         displayROI(debug_image, model_vis_07);
 
         if (cv::waitKey(1) == 'q')
