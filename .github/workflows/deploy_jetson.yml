@@ -37,7 +37,7 @@ name: Deploy Models to Jetson via SSH
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
   deploy:
