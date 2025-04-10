@@ -1,9 +1,11 @@
-// jetracer.cpp
+// Path: Mv03-J/sources/lane_detection.cpp
 #include "jetracer.hpp"
 #include <stdexcept>
 #include <thread>
 #include <algorithm>
 #include <cstring>
+
+std::atomic<int> currentJoystickAngle(0);
 
 // I2CDevice Implementation
 I2CDevice::I2CDevice(const std::string& device, int address) {
@@ -199,19 +201,15 @@ void JetCar::process_joystick() {
         return;
     }
 
-    /*for (int i = 0; i < SDL_JoystickNumButtons(joystick); ++i) {
-        if (SDL_JoystickGetButton(joystick, i)) {
-            std::cout << "Button: " << i << "pressed!" << std::endl;
-        }
-    }*/
-
     while (running_) {
         SDL_JoystickUpdate();
 
         int left_joystick_y = SDL_JoystickGetAxis(joystick, 1);
         int right_joystick_x = SDL_JoystickGetAxis(joystick, 2);
         set_speed(-left_joystick_y / 32767.0f * 100);
-        smooth_steering(right_joystick_x / 32767.0f * MAX_ANGLE_, 10);
+        int joystickAngle = right_joystick_x / 32767.0f * MAX_ANGLE_;
+        currentJoystickAngle = joystickAngle; // Atualiza o ângulo do joystick
+        smooth_steering(joystickAngle, 10);   // Define a direção base
 
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
@@ -219,6 +217,40 @@ void JetCar::process_joystick() {
     SDL_JoystickClose(joystick);
     SDL_Quit();
 }
+
+// void JetCar::process_joystick() {
+//     if (SDL_Init(SDL_INIT_JOYSTICK) < 0) {
+//         std::cerr << "Failed to initialize SDL: " << SDL_GetError() << std::endl;
+//         return;
+//     }
+
+//     SDL_Joystick* joystick = SDL_JoystickOpen(0);
+//     if (!joystick) {
+//         std::cerr << "Failed to open joystick: " << SDL_GetError() << std::endl;
+//         SDL_Quit();
+//         return;
+//     }
+
+//     /*for (int i = 0; i < SDL_JoystickNumButtons(joystick); ++i) {
+//         if (SDL_JoystickGetButton(joystick, i)) {
+//             std::cout << "Button: " << i << "pressed!" << std::endl;
+//         }
+//     }*/
+
+//     while (running_) {
+//         SDL_JoystickUpdate();
+
+//         int left_joystick_y = SDL_JoystickGetAxis(joystick, 1);
+//         int right_joystick_x = SDL_JoystickGetAxis(joystick, 2);
+//         set_speed(-left_joystick_y / 32767.0f * 100);
+//         smooth_steering(right_joystick_x / 32767.0f * MAX_ANGLE_, 10);
+
+//         std::this_thread::sleep_for(std::chrono::milliseconds(50));
+//     }
+
+//     SDL_JoystickClose(joystick);
+//     SDL_Quit();
+// }
 
 void JetCar::start() {
     running_ = true;

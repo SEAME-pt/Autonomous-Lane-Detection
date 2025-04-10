@@ -1,3 +1,4 @@
+// Path: Mv03-J/sources/lane_detection.cpp
 #include <opencv2/opencv.hpp>
 #include "jetracer.hpp"
 #include "NvInfer.h"
@@ -335,6 +336,29 @@ bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
     return false;
 }
 
+void assistSteering(JetCar& jetracer, int laneTouchStatus, int joystickAngle) {
+    const int correctionAngle = 30; // Ângulo de correção (ajuste conforme necessário)
+    const int increment = 10;       // Incremento para suavidade
+
+    int targetAngle = joystickAngle; // Direção base do joystick
+
+    switch (laneTouchStatus) {
+        case 76: // Faixa esquerda tocada -> virar à direita
+            targetAngle = std::min(jetracer.MAX_ANGLE_, joystickAngle + correctionAngle);
+            std::cout << "[ASSIST] Correcting RIGHT due to left lane touch. Target: " << targetAngle << std::endl;
+            break;
+        case 82: // Faixa direita tocada -> virar à esquerda
+            targetAngle = std::max(-jetracer.MAX_ANGLE_, joystickAngle - correctionAngle);
+            std::cout << "[ASSIST] Correcting LEFT due to right lane touch. Target: " << targetAngle << std::endl;
+            break;
+        case 0: // Nenhuma faixa tocada -> seguir joystick
+            std::cout << "[ASSIST] No correction needed. Using joystick: " << joystickAngle << std::endl;
+            break;
+    }
+
+    jetracer.smooth_steering(targetAngle, increment);
+}
+
 // No main():
 int main() {
     signal(SIGINT, signal_handler);
@@ -364,13 +388,12 @@ int main() {
         if (frame_copy.empty())
             continue;
 
-        cv::Mat debug_image; // Variável para armazenar a debug_image
-        auto output = inferLaneNet(frame_copy, debug_image); // Passa debug_image para inferLaneNet
+        cv::Mat debug_image;
+        auto output = inferLaneNet(frame_copy, debug_image);
         cv::Mat model_vis_07 = visualizeOutput(output, 0.7);
-        isTouchingYellowLaneAndPublish(model_vis_07);
-        displayROI(debug_image, model_vis_07); // Usa debug_image para exibir a ROI
-
-        //cv::imshow("Model Output 0.7", model_vis_07);
+        int laneTouchStatus = isTouchingYellowLaneAndPublish(model_vis_07, jetracer);
+        assistSteering(jetracer, laneTouchStatus, currentJoystickAngle.load());
+        displayROI(debug_image, model_vis_07);
 
         if (cv::waitKey(1) == 'q')
             break;
