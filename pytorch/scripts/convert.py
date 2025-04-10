@@ -5,13 +5,13 @@ from model import LaneNet
 device = torch.device("cuda")
 model = LaneNet().to(device)
 
-retrain_path = "../models/retrain.pth"
+retrain_path = "../models/best_models/model_45.pth"
 checkpoint = torch.load(retrain_path)
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 
 # Criar entrada fictícia
-dummy_input = torch.randn(1, 3, 512, 512, device=device)
+dummy_input = torch.randn(1, 3, 256, 144, device=device)
 
 torch.onnx.export(
    model,

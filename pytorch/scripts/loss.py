@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class CombinedLoss(nn.Module):
-    def __init__(self, alpha=0.25, gamma=2):
+    def __init__(self, alpha=0.95, gamma=2):
         super(CombinedLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
