@@ -238,61 +238,64 @@ void capture_thread(cv::VideoCapture& cap) {
 }
 
 void displayROI(const cv::Mat& debug_image, const cv::Mat& binaryOutput) {
-    cv::Mat roiFrame = debug_image.clone();
-
+    // 1. ROI na debug_image (em cores)
+    cv::Mat roiFrameColor = debug_image.clone();
     const int checkHeight = 50;
     const int roiTop = 512 - checkHeight;
-
-    // Intervalos de colunas para as rodas
     const int leftWheelMin = 141;
     const int leftWheelMax = 161;
     const int rightWheelMin = 351;
     const int rightWheelMax = 371;
 
-    if (roiFrame.channels() == 1) {
-        cv::cvtColor(roiFrame, roiFrame, cv::COLOR_GRAY2BGR);
+    if (roiFrameColor.channels() == 1) {
+        cv::cvtColor(roiFrameColor, roiFrameColor, cv::COLOR_GRAY2BGR);
     }
 
-    // Desenha um retângulo ao redor da ROI inteira
-    cv::rectangle(
-        roiFrame,
-        cv::Point(0, roiTop),
-        cv::Point(511, 511),
-        cv::Scalar(0, 255, 0),
-        2
-    );
+    // Desenha a ROI na debug_image
+    cv::rectangle(roiFrameColor, cv::Point(0, roiTop), cv::Point(511, 511), cv::Scalar(0, 255, 0), 2);
+    cv::rectangle(roiFrameColor, cv::Point(leftWheelMin, roiTop), cv::Point(leftWheelMax, 511), cv::Scalar(0, 0, 255), 2);
+    cv::rectangle(roiFrameColor, cv::Point(rightWheelMin, roiTop), cv::Point(rightWheelMax, 511), cv::Scalar(0, 0, 255), 2);
 
-    // Desenha retângulos para os intervalos das rodas
-    cv::rectangle(
-        roiFrame,
-        cv::Point(leftWheelMin, roiTop),  // Canto superior esquerdo do intervalo esquerdo
-        cv::Point(leftWheelMax, 511),     // Canto inferior direito do intervalo esquerdo
-        cv::Scalar(0, 0, 255),            // Vermelho
-        2
-    );
-    cv::rectangle(
-        roiFrame,
-        cv::Point(rightWheelMin, roiTop), // Canto superior esquerdo do intervalo direito
-        cv::Point(rightWheelMax, 511),    // Canto inferior direito do intervalo direito
-        cv::Scalar(0, 0, 255),            // Vermelho
-        2
-    );
-
-    // Destaca pixels detectados como faixa nos intervalos
     for (int row = roiTop; row < 512; ++row) {
         for (int col = leftWheelMin; col <= leftWheelMax; ++col) {
             if (binaryOutput.at<uchar>(row, col) == 255) {
-                cv::circle(roiFrame, cv::Point(col, row), 3, cv::Scalar(255, 0, 0), -1); // Azul
+                cv::circle(roiFrameColor, cv::Point(col, row), 3, cv::Scalar(255, 0, 0), -1);
             }
         }
         for (int col = rightWheelMin; col <= rightWheelMax; ++col) {
             if (binaryOutput.at<uchar>(row, col) == 255) {
-                cv::circle(roiFrame, cv::Point(col, row), 3, cv::Scalar(255, 0, 0), -1); // Azul
+                cv::circle(roiFrameColor, cv::Point(col, row), 3, cv::Scalar(255, 0, 0), -1);
             }
         }
     }
 
-    cv::imshow("ROI", roiFrame);
+    // 2. ROI na model_vis_07 (preto e branco)
+    cv::Mat roiFrameBW = binaryOutput.clone();
+    if (roiFrameBW.channels() == 1) {
+        cv::cvtColor(roiFrameBW, roiFrameBW, cv::COLOR_GRAY2BGR); // Converte para BGR para desenhar em cores
+    }
+
+    // Desenha a ROI na model_vis_07
+    cv::rectangle(roiFrameBW, cv::Point(0, roiTop), cv::Point(511, 511), cv::Scalar(0, 255, 0), 2);
+    cv::rectangle(roiFrameBW, cv::Point(leftWheelMin, roiTop), cv::Point(leftWheelMax, 511), cv::Scalar(0, 0, 255), 2);
+    cv::rectangle(roiFrameBW, cv::Point(rightWheelMin, roiTop), cv::Point(rightWheelMax, 511), cv::Scalar(0, 0, 255), 2);
+
+    for (int row = roiTop; row < 512; ++row) {
+        for (int col = leftWheelMin; col <= leftWheelMax; ++col) {
+            if (binaryOutput.at<uchar>(row, col) == 255) {
+                cv::circle(roiFrameBW, cv::Point(col, row), 3, cv::Scalar(255, 0, 0), -1);
+            }
+        }
+        for (int col = rightWheelMin; col <= rightWheelMax; ++col) {
+            if (binaryOutput.at<uchar>(row, col) == 255) {
+                cv::circle(roiFrameBW, cv::Point(col, row), 3, cv::Scalar(255, 0, 0), -1);
+            }
+        }
+    }
+
+    // Exibe ambas as janelas
+    cv::imshow("ROI - Debug Image", roiFrameColor); // ROI na debug_image
+    cv::imshow("ROI - Model Output", roiFrameBW);   // ROI na model_vis_07
 }
 
 bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
