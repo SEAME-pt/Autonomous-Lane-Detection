@@ -51,7 +51,7 @@ jobs:
           echo "HOME is: $HOME"
           whoami 
           mkdir -p /home/runner/.ssh
-          ls -a ~/home/runner/
+          ls -a /home/runner
           echo "${{ secrets.JETSON_SSH_KEY }}"
           echo "${{ secrets.JETSON_SSH_KEY }}" > /home/runner/.ssh/id_rsa
           chmod 600 /home/runner/.ssh/id_rsa
