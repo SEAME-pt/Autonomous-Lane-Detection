@@ -56,14 +56,11 @@ def matplot_masks(images, masks, predicted_mask, path):
 
 best_iou = -float('inf')  # Start with a very low IoU
 best_loss = float('inf') 
-
 i = 0
-save_dir = "../models/"
 scaler = torch.amp.GradScaler()
 for epoch in range(0, 50):
     running_loss = 0.0
     running_iou = 0.0
-    name = f"model_{epoch + 1}.pth"
     for images, masks, paths in train_loader:
         i += 1
         images, masks = images.to(device), masks.to(device)
@@ -86,9 +83,11 @@ for epoch in range(0, 50):
         if i % 200 == 0:
             matplot_masks(images[0:1], masks[0:1], predicted_mask[0:1], paths[0]) 
         del outputs, predicted_probs, predicted_mask
-    if epoch > 5 and running_loss / len(train_loader) < best_loss or running_iou / len(train_loader) > best_iou:
+    if epoch > 10 and (running_loss / len(train_loader) < best_loss or running_iou / len(train_loader) > best_iou):
         best_loss = running_loss / len(train_loader)
         best_iou = running_iou / len(train_loader)
+        name = f"best_{epoch + 1}.pth"
+        save_dir = "../models/best_models/"
         save_path = os.path.join(save_dir, name)
         torch.save({
             'epoch': epoch,
@@ -100,6 +99,8 @@ for epoch in range(0, 50):
         }, save_path)
         model.to(device)
     elif (epoch + 1) % 5 == 0:
+        name = f"model_{epoch + 1}.pth"
+        save_dir = "../models/"
         save_path = os.path.join(save_dir, name)
         torch.save({
             'epoch': epoch,

@@ -17,8 +17,7 @@ This image was taken whilst testing the model in Jetson. Here you see different 
 Next there are a few videos we recorded while testing the model in CARLA. On one side, you see a CARLA's window, with the vehicle from a top spectator view. On the other side, you see an **OpenCV** window from the car's perspective, with our pytorch model's binary mask overlaying the road.
 In intersections, because there is NO lane, we defined that the car should go straight ahead, in the CARLA environment. You can see this behaviour in *carla_setup.py*
 
-![](results/town4.gif)
-![](results/town5.gif)
+Click to see our [LaneNet model on CARLA](results/town4.gif), [Lane detection on CARLA](results/town5.gif).
 
 ## Datasets
 The datasets we are using to train the model are from: [This is an external link to the Datasets used](https://onedrive.live.com/?id=4EF9629CA3CB4B5E%213022&cid=4EF9629CA3CB4B5E&redeem=aHR0cHM6Ly8xZHJ2Lm1zL3UvcyFBbDVMeTZPY1l2bE9sMDQxNHNSb3BGVkgyOTVXP2U9Q2pjbDYy). We used dataset8 and dataset10. However, we were using TUSimple and CULane beforehand, but couldn't get good results on CARLA, so we decided to switch datasets. For testing, we used dataset11 and **CARLA**. We have a testing script for CARLA in *carla_setup.py*.
