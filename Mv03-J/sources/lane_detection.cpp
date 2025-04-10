@@ -19,6 +19,7 @@ std::mutex frame_mutex;
 cv::Mat latest_frame;
 JetCar jetracer(0x40, 0x60);
 std::atomic<bool> running(true);
+std::atomic<int> currentJoystickAngle(0);
 
 #define LOCAL_BROKER "10.21.221.67"
 #define LOCAL_PORT 1883
@@ -299,18 +300,10 @@ void displayROI(const cv::Mat& debug_image, const cv::Mat& binaryOutput) {
     cv::imshow("ROI - Model Output", roiFrameBW);   // ROI na model_vis_07
 }
 
-bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
-    const int checkHeight = 100;           // Últimas 50 linhas
-    const int roiTop = 512 - checkHeight; // Linha inicial (462)
-
-    // Intervalos de colunas para as rodas
-    // const int leftWheelMin = 141;  // Início do intervalo da roda esquerda
-    // const int leftWheelMax = 161;  // Fim do intervalo da roda esquerda
-    // const int rightWheelMin = 351; // Início do intervalo da roda direita
-    // const int rightWheelMax = 371; // Fim do intervalo da roda direita
-
-	// Testes para ajustar a precisam do toque na faixa (por agora, verifica apenas as rodas traseiras)
-	const int leftWheelMin = 151;
+int isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput, JetCar& jetracer) {
+    const int checkHeight = 100;
+    const int roiTop = 512 - checkHeight;
+    const int leftWheelMin = 151;
     const int leftWheelMax = 171;
     const int rightWheelMin = 321;
     const int rightWheelMax = 341;
@@ -320,24 +313,24 @@ bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
             if (binaryOutput.at<uchar>(row, col) == 255) {
                 std::cout << "[DEBUG] LEFT (76) lane touched. Col.: " << col << "!" << std::endl;
                 publishLaneTouch(76);
-                return true;
+                return 76; // Faixa esquerda tocada
             }
         }
         for (int col = rightWheelMin; col <= rightWheelMax; ++col) {
             if (binaryOutput.at<uchar>(row, col) == 255) {
                 std::cout << "[DEBUG] RIGHT (82) lane touched. Col.: " << col << "!" << std::endl;
                 publishLaneTouch(82);
-                return true;
+                return 82; // Faixa direita tocada
             }
         }
     }
     std::cout << "[DEBUG] Any lane touched. Publishing 0!" << std::endl;
     publishLaneTouch(0);
-    return false;
+    return 0; // Nenhuma faixa tocada
 }
 
 void assistSteering(JetCar& jetracer, int laneTouchStatus, int joystickAngle) {
-    const int correctionAngle = 30; // Ângulo de correção (ajuste conforme necessário)
+    const int correctionAngle = 30; // Ângulo de correção
     const int increment = 10;       // Incremento para suavidade
 
     int targetAngle = joystickAngle; // Direção base do joystick

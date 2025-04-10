@@ -5,8 +5,6 @@
 #include <algorithm>
 #include <cstring>
 
-std::atomic<int> currentJoystickAngle(0);
-
 // I2CDevice Implementation
 I2CDevice::I2CDevice(const std::string& device, int address) {
     fd_ = open(device.c_str(), O_RDWR);

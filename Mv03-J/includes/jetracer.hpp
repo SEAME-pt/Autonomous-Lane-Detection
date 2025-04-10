@@ -44,6 +44,8 @@ public:
 
     bool circle_mode_ = false;
 
+	static constexpr int MAX_ANGLE_ = 180;
+
 private:
     void init_servo();
     void init_motors();
@@ -51,7 +53,7 @@ private:
     void set_motor_pwm(int channel, int value);
     void process_joystick();
 
-    static constexpr int MAX_ANGLE_ = 180;
+    // static constexpr int MAX_ANGLE_ = 180;
     static constexpr int SERVO_LEFT_PWM_ = 130;
     static constexpr int SERVO_CENTER_PWM_ = 310;
     static constexpr int SERVO_RIGHT_PWM_ =490;
