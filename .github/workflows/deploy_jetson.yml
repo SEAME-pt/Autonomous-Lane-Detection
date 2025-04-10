@@ -50,9 +50,8 @@ jobs:
         run: |
           echo "HOME is: $HOME"
           whoami 
-          ls -ld
           mkdir -p /home/runner/.ssh
-          ls -ld
+          ls -a
           echo "${{ secrets.JETSON_SSH_KEY }}" > /home/runner/.ssh/id_rsa
           chmod 600 /home/runner/.ssh/id_rsa
           ssh-keyscan -H 100.125.81.73 >> /home/runner/.ssh/known_hosts  
