@@ -240,12 +240,12 @@ void capture_thread(cv::VideoCapture& cap) {
 void displayROI(const cv::Mat& debug_image, const cv::Mat& binaryOutput) {
     // 1. ROI na debug_image (em cores)
     cv::Mat roiFrameColor = debug_image.clone();
-    const int checkHeight = 50;
+    const int checkHeight = 100;
     const int roiTop = 512 - checkHeight;
-    const int leftWheelMin = 141;
-    const int leftWheelMax = 161;
-    const int rightWheelMin = 351;
-    const int rightWheelMax = 371;
+    const int leftWheelMin = 151; // base 151
+    const int leftWheelMax = 171; // base 161
+    const int rightWheelMin = 321; // base 351
+    const int rightWheelMax = 341; // base 371
 
     if (roiFrameColor.channels() == 1) {
         cv::cvtColor(roiFrameColor, roiFrameColor, cv::COLOR_GRAY2BGR);
@@ -299,18 +299,22 @@ void displayROI(const cv::Mat& debug_image, const cv::Mat& binaryOutput) {
 }
 
 bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
-    const int checkHeight = 50;           // Últimas 50 linhas
+    const int checkHeight = 100;           // Últimas 50 linhas
     const int roiTop = 512 - checkHeight; // Linha inicial (462)
 
     // Intervalos de colunas para as rodas
-    const int leftWheelMin = 141;  // Início do intervalo da roda esquerda
-    const int leftWheelMax = 161;  // Fim do intervalo da roda esquerda
-    const int rightWheelMin = 351; // Início do intervalo da roda direita
-    const int rightWheelMax = 371; // Fim do intervalo da roda direita
+    // const int leftWheelMin = 141;  // Início do intervalo da roda esquerda
+    // const int leftWheelMax = 161;  // Fim do intervalo da roda esquerda
+    // const int rightWheelMin = 351; // Início do intervalo da roda direita
+    // const int rightWheelMax = 371; // Fim do intervalo da roda direita
 
-    // Verifica cada linha na ROI
+	// Testes para ajustar a precisam do toque na faixa (por agora, verifica apenas as rodas traseiras)
+	const int leftWheelMin = 151;
+    const int leftWheelMax = 171;
+    const int rightWheelMin = 321;
+    const int rightWheelMax = 341;
+
     for (int row = roiTop; row < 512; ++row) {
-        // Verifica o intervalo da roda esquerda
         for (int col = leftWheelMin; col <= leftWheelMax; ++col) {
             if (binaryOutput.at<uchar>(row, col) == 255) {
                 std::cout << "[DEBUG] LEFT (76) lane touched. Col.: " << col << "!" << std::endl;
@@ -318,8 +322,6 @@ bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
                 return true;
             }
         }
-
-        // Verifica o intervalo da roda direita
         for (int col = rightWheelMin; col <= rightWheelMax; ++col) {
             if (binaryOutput.at<uchar>(row, col) == 255) {
                 std::cout << "[DEBUG] RIGHT (82) lane touched. Col.: " << col << "!" << std::endl;
@@ -328,36 +330,10 @@ bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
             }
         }
     }
-
-    // Se nenhum pixel de faixa for encontrado nos intervalos
     std::cout << "[DEBUG] Any lane touched. Publishing 0!" << std::endl;
     publishLaneTouch(0);
     return false;
 }
-
-// bool isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
-//     const int carLeftEdge = 156; // Base: 151;
-//     const int carRightEdge = 361; // Base: 361
-//     const int checkHeight = 50; // Base: 200
-
-//     for (int row = 512 - checkHeight; row < 512; ++row) {
-//         if (binaryOutput.at<uchar>(row, carLeftEdge) == 255) {
-// 			// std::cout << "[DEBUG] LEFT lane touched. Publishing 76!" << std::endl;
-//             std::cout << "[DEBUG] RIGHT lane touched. Publishing 82!" << std::endl;
-//             publishLaneTouch(82);
-//             return true;
-//         }
-//         if (binaryOutput.at<uchar>(row, carRightEdge) == 255) {
-// 			// std::cout << "[DEBUG] RIGHT lane touched. Publishing 82!" << std::endl;
-//             std::cout << "[DEBUG] LEFT lane touched. Publishing 76!" << std::endl;
-//             publishLaneTouch(76);
-//             return true;
-//         }
-//     }
-// 	std::cout << "[DEBUG] Any lane touched. Publishing 0!" << std::endl;
-// 	publishLaneTouch(0);
-//     return false;
-// }
 
 // No main():
 int main() {
@@ -394,7 +370,7 @@ int main() {
         isTouchingYellowLaneAndPublish(model_vis_07);
         displayROI(debug_image, model_vis_07); // Usa debug_image para exibir a ROI
 
-        cv::imshow("Model Output 0.7", model_vis_07);
+        //cv::imshow("Model Output 0.7", model_vis_07);
 
         if (cv::waitKey(1) == 'q')
             break;
