@@ -322,13 +322,15 @@ void assistSteering(JetCar& jetracer, int laneTouchStatus, int joystickAngle) {
     jetracer.smooth_steering(targetAngle, increment);
 }
 
-int isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput, JetCar& jetracer) {
+int isTouchingYellowLaneAndPublish(const cv::Mat& binaryOutput) {
     const int checkHeight = 100;
     const int roiTop = 512 - checkHeight;
     const int leftWheelMin = 151;
     const int leftWheelMax = 171;
     const int rightWheelMin = 321;
     const int rightWheelMax = 341;
+
+
 
     for (int row = roiTop; row < 512; ++row) {
         for (int col = leftWheelMin; col <= leftWheelMax; ++col) {
@@ -382,7 +384,7 @@ int main() {
         cv::Mat debug_image;
         auto output = inferLaneNet(frame_copy, debug_image);
         cv::Mat model_vis_07 = visualizeOutput(output, 0.7);
-        int laneTouchStatus = isTouchingYellowLaneAndPublish(model_vis_07, jetracer);
+        int laneTouchStatus = isTouchingYellowLaneAndPublish(model_vis_07);
         assistSteering(jetracer, laneTouchStatus, jetracer.getCurrentJoystickAngle()); // Usando o método
         displayROI(debug_image, model_vis_07);
 
