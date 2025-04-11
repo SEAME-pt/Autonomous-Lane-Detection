@@ -1,70 +1,33 @@
-# name: Deploy Models to Jetson
-
-# on:
-#   push:
-#     branches:
-#       - main  # Adjust to your default branch
-
-# jobs:
-#   deploy:
-#     runs-on: self-hosted  # Use the Jetson runner
-#     steps:
-#       - name: Checkout Repository
-#         uses: actions/checkout@v4
-
-#       - name: Set Up Python Environment
-#         uses: actions/setup-python@v5
-#         with:
-#           python-version: '3.10'  # Match your Jetson’s Python version
-
-#       - name: Install Dependencies
-#         run: |
-#           python3 -m pip install --upgrade pip
-
-#       - name: Deploy Model to Jetson
-#         run: |
-#           mkdir -p /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
-#           cp ./pytorch/models/best_models/*.pth /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
-#           python3 actions_conversion.py /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
-
-#       - name: Verify Deployment
-#         run: |
-#           ls -lh /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
-#           echo "Model deployed successfully"
-
-name: Deploy Models to Jetson via SSH
+name: Deploy Models to Jetson
 
 on:
   push:
     branches:
-      - dev
+      - main  # Adjust to your default branch
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # GitHub-hosted runner
+    runs-on: [self-hosted, models]  # Use the Jetson runner
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set Up SSH Key
-        run: |
-          mkdir -p /home/runner/.ssh
-          echo "${{ secrets.JETSON_SSH_KEY }}" > /home/runner/.ssh/id_rsa
-          cat /home/runner/.ssh/id_rsa
-          chmod 600 /home/runner/.ssh/id_rsa
-          ls -la /home/runner/.ssh
-          ssh-keyscan -H 10.21.221.43 >> /home/runner/.ssh/known_hosts
-          cat /home/runner/.ssh/known_hosts
+      - name: Set Up Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'  # Match your Jetson’s Python version
 
-      - name: Deploy and Convert Models via SSH
+      - name: Install Dependencies
         run: |
-          ssh -i /home/runner/.ssh/id_rsa okdot5@10.21.221.43 << 'EOF' 
-            mkdir -p /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
-            exit
-          EOF
-          scp -i /home/runner/.ssh/id_rsa ./pytorch/models/best_models/*.pth okdot5@10.21.221.43:/home/okdot5/JOELEN_MODELS/matilde-models/best_models/
-          ssh -i /home/runner/.ssh/id_rsa okdot5@10.21.221.43 << 'EOF'
-          source /home/okdot5/yolovenv/bin/activate
-          python /home/okdot5/JOELEN_MODELS/matilde-models/actions_conversion.py /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
+          python3 -m pip install --upgrade pip
+
+      - name: Deploy Model to Jetson
+        run: |
+          mkdir -p /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
+          cp ./pytorch/models/best_models/*.pth /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
+          python3 actions_conversion.py /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
+
+      - name: Verify Deployment
+        run: |
           ls -lh /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
-          EOF
+          echo "Model deployed successfully"
