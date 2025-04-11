@@ -11,25 +11,26 @@ from torchmetrics import JaccardIndex
 
 device = torch.device("cuda")
 model = LaneNet().to(device)
-model.load_state_dict(torch.load('../models/retrain.pth', map_location=device))
+checkpoint = torch.load('../models/best_models/model_45.pth')
+model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 
 image_paths = []
 mask_paths = []
 
-image_dir = os.path.join('.', 'testing' ,'town4', 'val') 
+image_dir = os.path.join('..', 'testing' ,'town4', 'val') 
 for root, dirs, files in os.walk(image_dir):
     for file in files:
         image_path = os.path.join(root, file)
         file_name, file_ext = os.path.splitext(file)
         image_paths.append(image_path)
 
-image_dir = os.path.join('.', 'testing', 'german_carla') 
-for root, dirs, files in os.walk(image_dir):
-    for file in files:
-        if file.endswith('.jpg'):
-            image_path = os.path.join(root, file)
-            image_paths.append(image_path)
+# image_dir = os.path.join('.', 'testing', 'german_carla') 
+# for root, dirs, files in os.walk(image_dir):
+#     for file in files:
+#         if file.endswith('.jpg'):
+#             image_path = os.path.join(root, file)
+#             image_paths.append(image_path)
 
 test_dataset = LaneDataset(image_paths, transforms=test_transforms)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)
@@ -71,5 +72,4 @@ with torch.no_grad():  # No gradients are calculated during testing
         predictions = torch.sigmoid(outputs)
         predicted_mask = (predictions > 0.5).float()  # Convert probabilities to binary predictions
         iter += 1
-        if iter % 10 == 0:
-            matplot_masks(images, predicted_mask, iter, paths)
+        matplot_masks(images, predicted_mask, iter, paths)

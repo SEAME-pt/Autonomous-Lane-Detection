@@ -98,19 +98,21 @@ for epoch in range(0, 50):
             'best_loss': best_loss,
         }, save_path)
         model.to(device)
-    elif (epoch + 1) % 5 == 0:
-        name = f"model_{epoch + 1}.pth"
-        save_dir = "../models/"
-        save_path = os.path.join(save_dir, name)
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': model.cpu().state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict(),
-            'best_iou': best_iou,
-            'best_loss': best_loss,
-        }, save_path)
-        model.to(device)
+        print("best model saved")
+    # elif (epoch + 1) % 2 == 0:
+    name = f"model_{epoch + 1}.pth"
+    save_dir = "../models/"
+    save_path = os.path.join(save_dir, name)
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': model.cpu().state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'scheduler_state_dict': scheduler.state_dict(),
+        'best_iou': best_iou,
+        'best_loss': best_loss,
+    }, save_path)
+    model.to(device)
+    print("model saved")
     print(f"\n Epoch {epoch + 1}, Loss: {running_loss / len(train_loader)}, IOU: {running_iou / len(train_loader)}") # Print the average loss and iou for this epoch
     print(torch.cuda.memory_summary(abbreviated=False))
     print(f"Current RAM: {psutil.Process().memory_info().rss/1e9:.2f} GB")
