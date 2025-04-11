@@ -15,7 +15,7 @@ jobs:
       - name: Set Up Python Environment
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'  # Match your Jetson’s Python version
+          python-version: '3.8' 
 
       - name: Install Dependencies
         run: |
