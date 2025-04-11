@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, models]  # Use the Jetson runner
+    runs-on: [self-hosted]  # Use the Jetson runner
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
