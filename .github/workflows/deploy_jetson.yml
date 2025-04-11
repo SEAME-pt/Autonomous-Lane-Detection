@@ -24,6 +24,7 @@ jobs:
       - name: Deploy Model to Jetson
         run: |
           mkdir -p /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
+          ls
           cp ./pytorch/models/best_models/*.pth /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
           source /home/okdot5/yolovenv/bin/activate
           python /home/okdot5/JOELEN_MODELS/matilde-models/actions_conversion.py /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
