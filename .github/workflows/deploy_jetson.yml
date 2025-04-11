@@ -7,19 +7,10 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted]  # Use the Jetson runner
+    runs-on: self-hosted  # Use the Jetson runner
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Set Up Python Environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.8' 
-
-      - name: Install Dependencies
-        run: |
-          python3 -m pip install --upgrade pip
 
       - name: Deploy Model to Jetson
         run: |
