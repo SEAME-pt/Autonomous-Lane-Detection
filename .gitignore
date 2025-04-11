@@ -1,0 +1,9 @@
+pytorch/debug/
+pytorch/testing/
+pytorch/training/
+pytorch/models/*.pth
+pytorch/.venv/
+pytorch/models/rectangular/
+pytorch/__pycache__/
+pytorch/scripts/__pycache__/
+docs/
