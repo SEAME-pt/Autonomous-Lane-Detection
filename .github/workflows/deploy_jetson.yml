@@ -3,7 +3,7 @@ name: Deploy Models to Jetson
 on:
   push:
     branches:
-      - main  # Adjust to your default branch
+      - dev  # Adjust to your default branch
 
 jobs:
   deploy:
@@ -25,7 +25,8 @@ jobs:
         run: |
           mkdir -p /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
           cp ./pytorch/models/best_models/*.pth /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
-          python3 actions_conversion.py /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
+          source /home/okdot5/yolovenv/bin/activate
+          python /home/okdot5/JOELEN_MODELS/matilde-models/actions_conversion.py /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
 
       - name: Verify Deployment
         run: |
