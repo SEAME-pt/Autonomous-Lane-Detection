@@ -4,6 +4,6 @@ pytorch/training/
 pytorch/models/*.pth
 pytorch/.venv/
 pytorch/models/rectangular/
+pytorch/models/quadrangular/
 pytorch/__pycache__/
 pytorch/scripts/__pycache__/
-docs/

@@ -3,11 +3,11 @@ name: Deploy Models to Jetson
 on:
   push:
     branches:
-      - dev  # Adjust to your default branch
+      - dev  
 
 jobs:
   deploy:
-    runs-on: self-hosted  # Use the Jetson runner
+    runs-on: self-hosted  # Use Jetson runner
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -22,4 +22,3 @@ jobs:
       - name: Verify Deployment
         run: |
           ls -lh /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
-          echo "Model deployed successfully"
