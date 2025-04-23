@@ -11,7 +11,7 @@ from torchmetrics import JaccardIndex
 
 device = torch.device("cuda")
 model = LaneNet().to(device)
-checkpoint = torch.load('../models/best_models/model_45.pth')
+checkpoint = torch.load('../models/best_models/best_47.pth')
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 

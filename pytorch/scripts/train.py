@@ -57,8 +57,10 @@ def matplot_masks(images, masks, predicted_mask, path):
 best_iou = -float('inf')  # Start with a very low IoU
 best_loss = float('inf') 
 i = 0
+patience = 5
+epochs_no_improve = 0
 scaler = torch.amp.GradScaler()
-for epoch in range(0, 50):
+for epoch in range(0, 30):
     running_loss = 0.0
     running_iou = 0.0
     for images, masks, paths in train_loader:
@@ -80,10 +82,10 @@ for epoch in range(0, 50):
         torch.cuda.synchronize() 
         running_loss += loss.item() 
         running_iou += iou.item()
-        if i % 200 == 0:
+        if i % 500 == 0:
             matplot_masks(images[0:1], masks[0:1], predicted_mask[0:1], paths[0]) 
         del outputs, predicted_probs, predicted_mask
-    if epoch > 10 and (running_loss / len(train_loader) < best_loss or running_iou / len(train_loader) > best_iou):
+    if (epoch > 1 and (running_loss / len(train_loader) < best_loss or running_iou / len(train_loader) > best_iou)):
         best_loss = running_loss / len(train_loader)
         best_iou = running_iou / len(train_loader)
         name = f"best_{epoch + 1}.pth"
@@ -99,20 +101,11 @@ for epoch in range(0, 50):
         }, save_path)
         model.to(device)
         print("best model saved")
-    elif (epoch + 1) % 5 == 0:
-        name = f"model_{epoch + 1}.pth"
-        save_dir = "../models/"
-        save_path = os.path.join(save_dir, name)
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': model.cpu().state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict(),
-            'best_iou': best_iou,
-            'best_loss': best_loss,
-        }, save_path)
-        model.to(device)
-        print("model saved")
+    else: 
+        epochs_no_improve += 1
+    if epochs_no_improve >= patience:
+        print(f"Early stopping triggered after {epoch + 1} epochs.")
+        break
     print(f"\n Epoch {epoch + 1}, Loss: {running_loss / len(train_loader)}, IOU: {running_iou / len(train_loader)}") # Print the average loss and iou for this epoch
     print(torch.cuda.memory_summary(abbreviated=False))
     print(f"Current RAM: {psutil.Process().memory_info().rss/1e9:.2f} GB")
