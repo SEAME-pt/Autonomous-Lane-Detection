@@ -19,10 +19,10 @@ jobs:
 
           cp ./pytorch/models/best_models/*.pth /home/okdot5/new_models/best_models/pth
           source /home/okdot5/yolovenv/bin/activate
-          
+
           python /home/okdot5/new_models/actions_conversion.py /home/okdot5/new_models/best_models/pth
           ./home/okdot5/new_models/convert_trt.sh
 
       - name: Verify Deployment
         run: |
-          ls -lh /home/okdot5/new_models/best_models/
+          ls -lh /home/okdot5/new_models/best_models/trt
