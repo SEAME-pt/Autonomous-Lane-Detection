@@ -12,15 +12,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install TensorRT
+      - name: Update PATH for trtexec
         run: |
-          if ! command -v trtexec >/dev/null 2>&1; then
-            echo "Installing TensorRT"
-            sudo apt-get install -y tensorrt
-            trtexec --version
-          else
-            echo "TensorRT already installed"
-          fi
+          echo "PATH=$PATH:/usr/src/tensorrt/bin" >> $GITHUB_ENV
+          command -v trtexec || { echo "trtexec still not found after PATH update"; exit 1; }
 
       - name: Deploy Model to Jetson
         run: |
@@ -31,8 +26,7 @@ jobs:
           source /home/okdot5/yolovenv/bin/activate
 
           python /home/okdot5/new_models/actions_conversion.py /home/okdot5/new_models/best_models/pth
-          cd /home/okdot5/new_models/
-          ./convert_trt.sh
+          /home/okdot5/new_models/convert_trt.sh
 
       - name: Verify Deployment
         run: |
