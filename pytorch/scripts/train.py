@@ -101,6 +101,7 @@ for epoch in range(0, 30):
         }, save_path)
         model.to(device)
         print("best model saved")
+        epochs_no_improve = 0;
     else: 
         epochs_no_improve += 1
     if epochs_no_improve >= patience:

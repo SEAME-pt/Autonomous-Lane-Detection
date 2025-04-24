@@ -11,26 +11,37 @@ from torchmetrics import JaccardIndex
 
 device = torch.device("cuda")
 model = LaneNet().to(device)
-checkpoint = torch.load('../models/best_models/best_47.pth')
+checkpoint = torch.load('../models/best_models/best_7.pth')
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 
 image_paths = []
 mask_paths = []
-
+i = 0
 image_dir = os.path.join('..', 'testing' ,'town4', 'val') 
 for root, dirs, files in os.walk(image_dir):
+    if i > 50:
+        break;
     for file in files:
+        i += 1
         image_path = os.path.join(root, file)
         file_name, file_ext = os.path.splitext(file)
         image_paths.append(image_path)
+        if i > 50:
+            break;
 
-# image_dir = os.path.join('.', 'testing', 'german_carla') 
-# for root, dirs, files in os.walk(image_dir):
-#     for file in files:
-#         if file.endswith('.jpg'):
-#             image_path = os.path.join(root, file)
-#             image_paths.append(image_path)
+image_dir = os.path.join('..', 'testing', 'german_carla') 
+i = 0
+for root, dirs, files in os.walk(image_dir):
+    if i > 50:
+        break;
+    for file in files:
+        if file.endswith('.jpg'):
+            i += 1;
+            image_path = os.path.join(root, file)
+            image_paths.append(image_path)
+            if i > 50:
+                break ;
 
 test_dataset = LaneDataset(image_paths, transforms=test_transforms)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)

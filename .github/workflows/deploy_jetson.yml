@@ -7,19 +7,22 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted  # Use Jetson runner
+    runs-on: self-hosted  #Jetson runner
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Deploy Model to Jetson
         run: |
-          mkdir -p /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
-          cp ./pytorch/models/best_models/*.pth /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
+          cp -r /home/okdot5/new_models/best_models/* /home/okdot5/old_models/
+          find /home/okdot5/new_models/best_models/ -type f -delete
+
+          cp ./pytorch/models/best_models/*.pth /home/okdot5/new_models/best_models/pth
           source /home/okdot5/yolovenv/bin/activate
-          python /home/okdot5/JOELEN_MODELS/matilde-models/actions_conversion.py /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
           
+          python /home/okdot5/new_models/actions_conversion.py /home/okdot5/new_models/best_models/pth
+          ./home/okdot5/new_models/convert_trt.sh
 
       - name: Verify Deployment
         run: |
-          ls -lh /home/okdot5/JOELEN_MODELS/matilde-models/best_models/
+          ls -lh /home/okdot5/new_models/best_models/
