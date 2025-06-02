@@ -37,6 +37,7 @@ public:
     void set_speed(float speed);
     void set_steering(int angle);
     void smooth_steering(int target_angle, int increment);
+	int servo_delay_ms_ = 30;
 
 private:
     void init_servo();
@@ -45,10 +46,10 @@ private:
     void set_motor_pwm(int channel, int value);
     void process_joystick();
 
-    static constexpr int MAX_ANGLE_ = 180;
-    static constexpr int SERVO_LEFT_PWM_ = 130;
-    static constexpr int SERVO_CENTER_PWM_ = 310;
-    static constexpr int SERVO_RIGHT_PWM_ = 490;
+    static constexpr int MAX_ANGLE_ = 140;
+    static constexpr int SERVO_LEFT_PWM_ = 140;
+    static constexpr int SERVO_CENTER_PWM_ = 280;
+    static constexpr int SERVO_RIGHT_PWM_ = 420;
 
     int servo_addr_;
     int motor_addr_;

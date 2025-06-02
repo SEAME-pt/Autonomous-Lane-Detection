@@ -114,7 +114,7 @@ void JetCar::set_steering(int angle) {
 
     set_servo_pwm(0, 0, pwm);
     current_angle_ = angle;
-	std::this_thread::sleep_for(std::chrono::milliseconds(20));
+	std::this_thread::sleep_for(std::chrono::milliseconds(servo_delay_ms_));
 }
 
 void JetCar::smooth_steering(int target_angle, int increment) {
