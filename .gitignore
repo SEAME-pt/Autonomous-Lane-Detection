@@ -1,0 +1,12 @@
+pytorch/debug/
+pytorch/testing/
+pytorch/training/
+pytorch/.venv/
+pytorch/models/rectangular/
+pytorch/models/older_models/
+pytorch/models/quadrangular/
+pytorch/__pycache__/
+pytorch/scripts/__pycache__/
+dtools
+pytorch/seame_masks/
+
