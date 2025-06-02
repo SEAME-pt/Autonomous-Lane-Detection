@@ -114,6 +114,20 @@ void JetCar::set_steering(int angle) {
 
     set_servo_pwm(0, 0, pwm);
     current_angle_ = angle;
+	std::this_thread::sleep_for(std::chrono::milliseconds(20));
+}
+
+void JetCar::smooth_steering(int target_angle, int increment) {
+    target_angle = std::clamp(target_angle, -MAX_ANGLE_, MAX_ANGLE_);
+    int step = (target_angle > current_angle_) ? increment : -increment;
+
+    while ((step > 0 && current_angle_ < target_angle) || (step < 0 && current_angle_ > target_angle)) {
+        current_angle_ += step;
+        if ((step > 0 && current_angle_ > target_angle) || (step < 0 && current_angle_ < target_angle)) {
+            current_angle_ = target_angle;
+        }
+        set_steering(current_angle_);
+    }
 }
 
 void JetCar::set_servo_pwm(int channel, int on_value, int off_value) {
@@ -158,20 +172,6 @@ void JetCar::set_speed(float speed) {
     }
 
     current_speed_ = speed;
-}
-
-void JetCar::smooth_steering(int target_angle, int increment) {
-    target_angle = std::clamp(target_angle, -MAX_ANGLE_, MAX_ANGLE_);
-    int step = (target_angle > current_angle_) ? increment : -increment;
-
-    while ((step > 0 && current_angle_ < target_angle) || (step < 0 && current_angle_ > target_angle)) {
-        current_angle_ += step;
-        if ((step > 0 && current_angle_ > target_angle) || (step < 0 && current_angle_ < target_angle)) {
-            current_angle_ = target_angle;
-        }
-        set_steering(current_angle_);
-        std::this_thread::sleep_for(std::chrono::milliseconds(0));
-    }
 }
 
 void JetCar::process_joystick() {

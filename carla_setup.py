@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 import signal
 import sys
-sys.path.append('/home/seame/Autonomous-Lane-Detection/pytorch/scripts') 
+sys.path.append('/home/seame/Autonomous-Lane-Detection/pytorch/scripts')
 from model import LaneNet
 import threading
 import torch
@@ -14,7 +14,7 @@ from sklearn.cluster import DBSCAN
 
 device = torch.device("cuda")
 model = LaneNet().to(device)
-checkpoint = torch.load('/home/seame/Autonomous-Lane-Detection/pytorch/models/retrain.pth', map_location=device) 
+checkpoint = torch.load('/home/seame/Autonomous-Lane-Detection/pytorch/models/retrain.pth', map_location=device)
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
 
@@ -35,12 +35,12 @@ def show_images():
                     camera.destroy()
                 if vehicle is not None:
                     vehicle.destroy()
-                time.sleep(1)  
+                time.sleep(1)
                 sys.exit(0)
             time.sleep(0.05)  # Add a small delay to prevent excessive CPU usage
         else:
             time.sleep(0.1)  # Wait if there's no image yet
-    cv2.destroyAllWindows() 
+    cv2.destroyAllWindows()
 
 def update_camera_position(world):
     spectator = world.get_spectator()  # spectator camera
@@ -67,25 +67,25 @@ def calculate_steering(lane_mask, image_width):
         if len(points) < min_points:
             return False
         return np.mean(hist > min_points/5) > min_density
-    
+
     left_valid = check_density(left_x)
     right_valid = check_density(right_x)
     if not left_valid or not right_valid:
         i += 1
         print(f"Unvalid points{i}\n")
         return 0.0, width/2
-    
+
     left_center = np.average(left_x, weights=(y_coords[x_coords < width//2] - y_coords.min() + 1))
     right_center = np.average(right_x, weights=(y_coords[x_coords >= width//2] - y_coords.min() + 1))
     lane_width = abs(right_center - left_center)
-    
+
     target_center = (left_center + right_center) / 2
     offset = target_center - (width / 2)
     if abs(offset) < width * 0.03:
         return 0.0, target_center #no steering for small offsets
     # Progressive steering response - less aggressive
     steering = np.arctan(offset / (lane_width * 0.6)) * (2/np.pi) #less aggressive steering
-    # Smoothing with memory 
+    # Smoothing with memory
     if not hasattr(calculate_steering, 'history'):
         calculate_steering.history = [0, 0, 0]
     calculate_steering.history = calculate_steering.history[1:] + [steering]
@@ -100,7 +100,7 @@ def process_image(image):
     frame_tensor = transforms.functional.normalize(frame_tensor, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     with torch.no_grad():
         raw_output = model(frame_tensor)
-    lane_mask = torch.sigmoid(raw_output).squeeze().cpu() 
+    lane_mask = torch.sigmoid(raw_output).squeeze().cpu()
     lane_mask = (lane_mask > 0.9).numpy().astype(np.uint8)
     lane_mask = cv2.GaussianBlur(lane_mask, (5, 5), 0)
     steering, target_center = calculate_steering(lane_mask, 512)
@@ -108,20 +108,20 @@ def process_image(image):
     overlay = frame_resized.copy()
     height, width = frame_resized.shape[:2]
     lane_mask_color = cv2.cvtColor(lane_mask * 255, cv2.COLOR_GRAY2BGR)
-    lane_mask_color[..., 2] = lane_mask_color[..., 2] * 255 
+    lane_mask_color[..., 2] = lane_mask_color[..., 2] * 255
     overlay = cv2.addWeighted(overlay, 0.6, lane_mask_color, 0.4, 0)
     if target_center is not None:
         cv2.line(
             overlay,
             (int(target_center), overlay.shape[0]),
             (int(target_center), overlay.shape[0] // 2),
-            (255, 255, 0), 
+            (255, 255, 0),
             thickness=2,
         )
     latest_image = overlay
     if vehicle is not None and vehicle.is_alive:
         control = vehicle.get_control()
-        control.throttle = max(0.7, 0.8 - abs(steering) * 0.9) 
+        control.throttle = max(0.7, 0.8 - abs(steering) * 0.9)
         control.brake = 0.0
         control.steer = steering
         control.brake = 0.0
@@ -142,35 +142,35 @@ def start_simulation():
     blueprint_library = world.get_blueprint_library()
     settings = world.get_settings()
     settings.synchronous_mode = True #ticks
-    settings.fixed_delta_seconds = 0.05  
+    settings.fixed_delta_seconds = 0.05
     settings.max_substep_delta_time = 0.01
     settings.substepping = True
     settings.max_substeps = 10
     world.apply_settings(settings)
 
-    vehicle_bp = blueprint_library.find('vehicle.volkswagen.t2_2021') 
+    vehicle_bp = blueprint_library.find('vehicle.volkswagen.t2_2021')
     spawn_points = world.get_map().get_spawn_points()
 
     vehicle = None
     for spawn_point in spawn_points:
         try:
             vehicle = world.spawn_actor(vehicle_bp, spawn_point)
-            break 
+            break
         except RuntimeError:
             continue
     vehicle.set_autopilot(False)
-    vehicle.set_simulate_physics(True) 
+    vehicle.set_simulate_physics(True)
     camera_transform = carla.Transform(carla.Location(x=4.0, y=0.0, z=1.4))  #vehicle-attached camera
     camera_bp = blueprint_library.find('sensor.camera.rgb')
-    camera_bp.set_attribute('fov', '120') 
+    camera_bp.set_attribute('fov', '120')
     camera = world.spawn_actor(camera_bp, camera_transform, attach_to=vehicle)
 
     camera.listen(lambda image: process_image(image))
     try:
         while True:
             world.tick()
-            update_camera_position(world) 
-            time.sleep(0.05)  
+            update_camera_position(world)
+            time.sleep(0.05)
     except KeyboardInterrupt:
         print(f"Frame processing failed")
 
