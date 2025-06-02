@@ -20,7 +20,7 @@ In intersections, because there is NO lane, we defined that the car should go st
 Click to see our [LaneNet model on CARLA](results/town4.gif), [Lane detection on CARLA](results/town5.gif).
 
 ## Datasets
-The datasets we are using to train the model are from: [This is an external link to the Datasets used](https://onedrive.live.com/?id=4EF9629CA3CB4B5E%213022&cid=4EF9629CA3CB4B5E&redeem=aHR0cHM6Ly8xZHJ2Lm1zL3UvcyFBbDVMeTZPY1l2bE9sMDQxNHNSb3BGVkgyOTVXP2U9Q2pjbDYy). We used dataset8 and dataset10. However, we were using TUSimple and CULane beforehand, but couldn't get good results on CARLA, so we decided to switch datasets. For testing, we used dataset11 and **CARLA**. We have a testing script for CARLA in *carla_setup.py*.
+The datasets we used to train the model are from: [Link to datasets used](https://onedrive.live.com/?id=4EF9629CA3CB4B5E%213022&cid=4EF9629CA3CB4B5E&redeem=aHR0cHM6Ly8xZHJ2Lm1zL3UvcyFBbDVMeTZPY1l2bE9sMDQxNHNSb3BGVkgyOTVXP2U9Q2pjbDYy). We used dataset8 and dataset10. We have a testing script for CARLA in *carla_setup.py*.
 
 ## Pytorch Model
 
@@ -81,7 +81,7 @@ To test the model, insert the right directory path to your testing images, in th
 python testing.py
 ```
 
-For testing in CARLA, be sure to move carla_setup.py to PythonApi/carla directory in your carla's version folder and run it, after intalling all CARLA's dependencies and running the CARLA's .sh file in another terminal:
+For testing in CARLA, be sure to move carla_setup.py to PythonApi/carla directory in your carla's version folder and run it, after intalling all CARLA's dependencies and running the CARLA's .sh file in another terminal, run in a vev:
 
 ```bash
 python carla_setup.py

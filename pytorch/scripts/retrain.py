@@ -17,35 +17,32 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 image_paths = []
 mask_paths = []
 
-image_dir = os.path.join('..','training' ,'german_dataset') 
+image_dir = os.path.join('..','training' ,'seame') 
 for root, dirs, files in os.walk(image_dir):
-    if 'dataset10' in root:
-        for file in files:
-            if file.endswith('.jpg'):
-                image_path = os.path.join(root, file)
-                mask_path = image_path.replace('.jpg', '.png')
-                if not os.path.exists(mask_path):  
-                    continue 
-                mask_paths.append(mask_path)
-                image_paths.append(image_path)
-
+    for file in files:
+        if file.endswith('.jpg'):
+            image_path = os.path.join(root, file)
+            mask_path = image_path.replace('.jpg', '.png')
+            if not os.path.exists(mask_path):  
+                continue 
+            mask_paths.append(mask_path)
+            image_paths.append(image_path)
 
 dataset = LaneDataset(image_paths, mask_paths, transforms=train_transforms)
-train_loader = DataLoader(dataset, batch_size=6, shuffle=True,  num_workers=0, pin_memory=True)
+train_loader = DataLoader(dataset, batch_size=1, shuffle=True,  num_workers=0, pin_memory=True)
 model = LaneNet().to(device)
 
 loss_function = CombinedLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.00001, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=5)
 iou_metric = JaccardIndex(task="binary", num_classes=1).to(device)
 
 best_iou = -float('inf')  
 best_loss = float('inf')
-retrain_path = "../models/retrain.pth"
+retrain_path = "../models/best_models/best_7.pth"
 if os.path.exists(retrain_path):
     checkpoint = torch.load(retrain_path)
     model.load_state_dict(checkpoint["model_state_dict"])
-
 
 def denormalize(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
     if torch.is_tensor(image):
@@ -82,10 +79,10 @@ def matplot_masks(images, masks, predicted_mask, path):
     print(f"Iou: {iou.item():.4f}, Loss: {loss.item():.4f}, Iter: {i}, path: {path}")
 
 scaler = torch.amp.GradScaler()
-save_dir = "../models/"
+save_dir = "../models/retrained"
 i = 0
 model.train()
-for epoch in range(0, 50):
+for epoch in range(0, 20):
     running_loss = 0.0
     running_iou = 0.0
     for images, masks, paths in train_loader:
@@ -110,37 +107,37 @@ for epoch in range(0, 50):
 
         running_loss += loss.item()  
         running_iou += iou.item()
-        if i % 100 == 0:
-            matplot_masks(images[0:1], masks[0:1], predicted_mask[0:1], paths[0])  
+        # if i % 100 == 0:
+        matplot_masks(images[0:1], masks[0:1], predicted_mask[0:1], paths[0])  
         del outputs, predicted_probs, predicted_mask
     avg_loss = running_loss / len(train_loader)
     avg_iou = running_iou / len(train_loader)
-    if epoch + 1 > 2 and (avg_loss < best_loss or avg_iou > best_iou):
-        best_loss = avg_loss
-        best_iou = avg_iou
-        save_path = os.path.join(save_dir, f"best_model{epoch +1}.pth")
-        torch.save({
-            "epoch": epoch + 1,
-            "model_state_dict": model.cpu().state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "scheduler_state_dict": scheduler.state_dict(),
-            "best_iou": best_iou,
-            "best_loss": best_loss
-        }, save_path)
-        model.to(device)
-        print(f"Best model saved (Epoch {epoch+1}, IOU: {avg_iou:.4f}, Loss: {avg_loss:.4f})")
-    elif (epoch + 1) % 2 == 0:
-        save_path = os.path.join(save_dir, f"model_{epoch+1}.pth")
-        torch.save({
-            "epoch": epoch + 1,
-            "model_state_dict": model.cpu().state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "scheduler_state_dict": scheduler.state_dict(),
-            "best_iou": best_iou,
-            "best_loss": best_loss
-        }, save_path)
-        model.to(device)
-        print(f"Checkpoint saved at epoch {epoch+1}")
+    # if epoch + 1 > 2 and (avg_loss < best_loss or avg_iou > best_iou):
+    #     best_loss = avg_loss
+    #     best_iou = avg_iou
+    #     save_path = os.path.join(save_dir, f"best_model{epoch +1}.pth")
+    #     torch.save({
+    #         "epoch": epoch + 1,
+    #         "model_state_dict": model.cpu().state_dict(),
+    #         "optimizer_state_dict": optimizer.state_dict(),
+    #         "scheduler_state_dict": scheduler.state_dict(),
+    #         "best_iou": best_iou,
+    #         "best_loss": best_loss
+    #     }, save_path)
+    #     model.to(device)
+    #     print(f"Best model saved (Epoch {epoch+1}, IOU: {avg_iou:.4f}, Loss: {avg_loss:.4f})")
+    # elif (epoch + 1) % 2 == 0:
+    save_path = os.path.join(save_dir, f"model_{epoch+1}.pth")
+    torch.save({
+        "epoch": epoch + 1,
+        "model_state_dict": model.cpu().state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "scheduler_state_dict": scheduler.state_dict(),
+        "best_iou": best_iou,
+        "best_loss": best_loss
+    }, save_path)
+    model.to(device)
+    # print(f"Checkpoint saved at epoch {epoch+1}")
     print(f"Epoch {epoch + 1}, Loss: {avg_loss:.4f}, IOU: {avg_iou:.4f}")
     print(torch.cuda.memory_summary(abbreviated=False))
     print(f"RAM Usage: {psutil.Process().memory_info().rss/1e9:.2f} GB")

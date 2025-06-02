@@ -8,3 +8,5 @@ pytorch/models/quadrangular/
 pytorch/__pycache__/
 pytorch/scripts/__pycache__/
 dtools
+pytorch/seame_masks/
+

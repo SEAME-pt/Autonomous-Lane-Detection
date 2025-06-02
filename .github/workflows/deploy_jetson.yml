@@ -12,11 +12,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Update PATH for trtexec
-        run: |
-          echo "PATH=$PATH:/usr/src/tensorrt/bin" >> $GITHUB_ENV
-          command -v trtexec || { echo "trtexec still not found after PATH update"; exit 1; }
-
       - name: Deploy Model to Jetson
         run: |
           cp -r /home/okdot5/new_models/best_models/* /home/okdot5/old_models/
@@ -26,7 +21,6 @@ jobs:
           source /home/okdot5/yolovenv/bin/activate
 
           python /home/okdot5/new_models/actions_conversion.py /home/okdot5/new_models/best_models/pth
-          /home/okdot5/new_models/convert_trt.sh
 
       - name: Verify Deployment
         run: |
